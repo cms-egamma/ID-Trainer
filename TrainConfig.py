@@ -33,11 +33,12 @@ DefaultMVAs='True' #If this is true default configuration for MVAs are used : pr
 SplitTraining='True' #Whether to split training (for example in barrel and endcap)
 SplitBoolean='ele_isEB' #Should be an integer, only used in SplitTraining is true
 
-Reweighting = 'To Signal' #Binning scheme
-#Possible choices :
-#None : No reweighting
-#FlatpT : Binned flat in pT (default binning)
-#Flateta : Binned flat in eta (default binning)
-#pt-etaSig : To Signal pt-eta spectrum 
-#pt-etaBkg : To Background pt-eta spectrum
-
+Reweighting = 'pt-etaSig' #Binning scheme
+'''
+Possible choices :
+None : No reweighting
+FlatpT : Binned flat in pT (default binning)
+Flateta : Binned flat in eta (default binning)
+pt-etaSig : To Signal pt-eta spectrum 
+pt-etaBkg : To Background pt-eta spectrum
+'''
