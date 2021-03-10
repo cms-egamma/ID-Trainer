@@ -1,12 +1,16 @@
 # In this file you can specify the training configuration
 
-OutputDir = './Output' #All plots, models, config file will be stored here
+import numpy as np
+
+OutputDirName = 'Output' #All plots, models, config file will be stored here
+
+RandomState=42
 
 Debug='True' # If True, only a 10% of events/objects are used for either Signal or background
 
 #Signal and background files
 SigFiles = ['/eos/user/a/akapoor/SWAN_projects/DYJets_incl_MLL-50_TuneCP5_14TeV_NEv_3943691.root',
-           '/eos/user/a/akapoor/SWAN_projects/TauGun_Pt-15to500_14TeV_Run3Summer19MiniAOD-2021Scenario_106X_mcRun3_2021_NewCode2021.root']
+            '/eos/user/a/akapoor/SWAN_projects/TauGun_Pt-15to500_14TeV_Run3Summer19MiniAOD-2021Scenario_106X_mcRun3_2021_NewCode2021.root']
 
 BkgFiles = ['/eos/user/a/akapoor/SWAN_projects/QCD_Pt_15to7000_TuneCP5_Flat_14TeV_pythia8-Run3Summer19MiniAOD-106X_mcRun3_2023.root']
 
@@ -18,6 +22,8 @@ BkgCut= "(matchedToGenEle == 0)"
 SigXsecWts=[1,1]
 BkgXsecWts=[1]
 
+testsize=0.2
+
 CommonCut = "(ele_pt > 10)" #Common cuts for both signal and background
 
 Tree = "ntuplizer/tree" #Location/Name of tree inside Root files
@@ -26,7 +32,7 @@ features = ["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaie
 
 feature_bins = [np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), np.linspace(0, 0.03, 51)] #Binning used only for plotting features (should be in the same order as features), does not affect training
 
-MVAs = ["XGB","DNN"] #MVAs to use
+MVAs = "XGB DNN" #MVAs to use separated by space
 
 DefaultMVAs='True' #If this is true default configuration for MVAs are used : probably best when just starting out
 
