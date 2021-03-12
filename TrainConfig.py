@@ -4,22 +4,23 @@ import numpy as np
 
 OutputDirName = 'Output' #All plots, models, config file will be stored here
 
-RandomState=42
+RandomState=42 # Choose the same number everytime for reproducibility
 
-Debug='True' # If True, only a 10% of events/objects are used for either Signal or background
+Debug=True # If True, only a 10% of events/objects are used for either Signal or background
 
-#Signal and background files
+#Files, Cuts and XsecWts should have the same number of elements
 SigFiles = ['/eos/user/a/akapoor/SWAN_projects/DYJets_incl_MLL-50_TuneCP5_14TeV_NEv_3943691.root',
             '/eos/user/a/akapoor/SWAN_projects/TauGun_Pt-15to500_14TeV_Run3Summer19MiniAOD-2021Scenario_106X_mcRun3_2021_NewCode2021.root']
-
-BkgFiles = ['/eos/user/a/akapoor/SWAN_projects/QCD_Pt_15to7000_TuneCP5_Flat_14TeV_pythia8-Run3Summer19MiniAOD-106X_mcRun3_2023.root']
-
-#Cuts to select appropriate signal and background
-SigCut= "(matchedToGenEle == 1)"
-BkgCut= "(matchedToGenEle == 0)"
-
+#Cuts to select appropriate signal
+SigCuts= ["(matchedToGenEle == 1)","(matchedToGenEle == 1)"]
 #Any extra xsec weight : Useful when stitching samples for either signal or background : '1' means no weight
 SigXsecWts=[1,1]
+
+#Files, Cuts and XsecWts should have the same number of elements
+BkgFiles = ['/eos/user/a/akapoor/SWAN_projects/QCD_Pt_15to7000_TuneCP5_Flat_14TeV_pythia8-Run3Summer19MiniAOD-106X_mcRun3_2023.root']
+#Cuts to select appropriate background
+BkgCuts= ["(matchedToGenEle == 0)"]
+#Any extra xsec weight : Useful when stitching samples for either signal or background : '1' means no weight
 BkgXsecWts=[1]
 
 testsize=0.2
