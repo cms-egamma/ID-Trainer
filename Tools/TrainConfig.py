@@ -8,9 +8,7 @@ from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Dropout
 #####################################################################
-
 ####Start here
-
 #####################################################################
 OutputDirName = 'Output' #All plots, models, config file will be stored here
 RandomState=42 # Choose the same number everytime for reproducibility
@@ -47,12 +45,12 @@ feature_bins = [np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0,
 
 #WPs to compare to
 OverlayWP=['Fall17isoV1wpLoose','Fall17noIsoV1wpLoose']
-
+OverlayWPColors = ["black","purple"]
 #####################################################################
 
 #MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
 MVAs = ["XGB","DNN"]
-
+MVAColors = ["green","blue"]
 ######### Grid Search parameters for XGB (will only be used if MVAs contains "XGB"
 XGBGridSearch= {'learning_rate':[0.1, 0.01, 0.001]}
 
