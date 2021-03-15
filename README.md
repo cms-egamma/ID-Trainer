@@ -4,7 +4,7 @@
 
 ``` 
 source /cvmfs/sft.cern.ch/lcg/views/LCG_97python3/x86_64-centos7-gcc8-opt/setup.sh
-cp Tools/TrainConfig Tools/NewTrainConfig
+cp Tools/TrainConfig.py Tools/NewTrainConfig.py
 python Trainer.py Tools/NewTrainConfig
 
 ```

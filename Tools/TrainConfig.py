@@ -36,12 +36,23 @@ BkgXsecWts=[1]
 #####################################################################
 
 testsize=0.2
-CommonCut = "(ele_pt > 10)" #Common cuts for both signal and background
+#Common cuts for both signal and background
+CommonCut = "(ele_pt > 10) & (abs(scl_eta)>1.566)" 
+#This is endcap and pt>10 GeV
+#barrel would be
+#ele_pt > 10) & (abs(scl_eta)<1.442)
+
 Tree = "ntuplizer/tree" #Location/Name of tree inside Root files
 
 features = ["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"] #Input features to MVA
 
-feature_bins = [np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), np.linspace(0, 0.03, 51)] #Binning used only for plotting features (should be in the same order as features), does not affect training
+feature_bins = [np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), 30]
+#template 
+#np.linspace(lower boundary, upper boundary, totalbins+1)
+#when not sure about the binning, you can just specify numbers, which will then correspond to toal bins
+#example
+
+#Binning used only for plotting features (should be in the same order as features), does not affect training
 
 #WPs to compare to
 OverlayWP=['Fall17isoV1wpLoose','Fall17noIsoV1wpLoose']
@@ -53,7 +64,17 @@ MVAs = ["XGB","DNN"]
 MVAColors = ["green","blue"]
 ######### Grid Search parameters for XGB (will only be used if MVAs contains "XGB"
 XGBGridSearch= {'learning_rate':[0.1, 0.01, 0.001]}
-
+#The above is just one paramter grid : the learning rate
+#All other parameters are default values
+#But you give any number you want:
+#example:
+#XGBGridSearch= {'learning_rate':[0.1, 0.01, 0.001],      
+#                'min_child_weight': [1, 5, 10],
+#                'gamma': [0.5, 1, 1.5, 2, 5],
+#                'subsample': [0.6, 0.8, 1.0],
+#                'colsample_bytree': [0.6, 0.8, 1.0],
+#                'max_depth': [3, 4, 5]}
+#Just rememeber the larger the grid the more time optimization takes
 ######### DNN parameters and model (will only be used if MVAs contains "DNN"
 DNNDict={'epochs':5, 'batchsize':100, 'lr':0.001}
 modelDNN=Sequential()
