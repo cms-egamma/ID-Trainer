@@ -44,14 +44,32 @@ CommonCut = "(ele_pt > 10) & (abs(scl_eta)>1.566)"
 
 Tree = "ntuplizer/tree" #Location/Name of tree inside Root files
 
-features = ["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"] #Input features to MVA
+################################
 
-feature_bins = [np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), 30]
+#MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
+MVAs = ["XGB_1","XGB_2","DNN_1"]
+MVAColors = ["green","blue","red"]
+
+MVALabels = {"XGB_1" : "XGB with 4 features",
+             "XGB_2" : "XGB with 3 features",
+             "DNN_1" : "DNN firsr try"
+            } #These labels can be anything (this is how you will identify them on ROC plots for example)
+
+################################
+features = {
+            "XGB_1":["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"],
+            "XGB_2":["ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"],
+            "DNN_1":["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"],
+           } #Input features to MVA
+
+feature_bins = {
+                "XGB_1":[np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), 30],
+                "XGB_2":[np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), 30],
+                "DNN_1":[np.linspace(-1, 1, 51), np.linspace(0, 0.03, 51), np.linspace(0, 0.15, 51), 30],
+               }
 #template 
 #np.linspace(lower boundary, upper boundary, totalbins+1)
 #when not sure about the binning, you can just specify numbers, which will then correspond to toal bins
-#example
-
 #Binning used only for plotting features (should be in the same order as features), does not affect training
 
 #WPs to compare to
@@ -59,11 +77,12 @@ OverlayWP=['Fall17isoV1wpLoose','Fall17noIsoV1wpLoose']
 OverlayWPColors = ["black","purple"]
 #####################################################################
 
-#MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
-MVAs = ["XGB","DNN"]
-MVAColors = ["green","blue"]
 ######### Grid Search parameters for XGB (will only be used if MVAs contains "XGB"
-XGBGridSearch= {'learning_rate':[0.1, 0.01, 0.001]}
+XGBGridSearch= {
+                "XGB_1": {'learning_rate':[0.1, 0.01, 0.001]},
+                "XGB_2": {'gamma':[0.5, 1],'learning_rate':[0.1, 0.01]},
+               }
+
 #The above is just one paramter grid : the learning rate
 #All other parameters are default values
 #But you give any number you want:
@@ -76,12 +95,16 @@ XGBGridSearch= {'learning_rate':[0.1, 0.01, 0.001]}
 #                'max_depth': [3, 4, 5]}
 #Just rememeber the larger the grid the more time optimization takes
 ######### DNN parameters and model (will only be used if MVAs contains "DNN"
-DNNDict={'epochs':5, 'batchsize':100, 'lr':0.001}
-modelDNN=Sequential()
-modelDNN.add(Dense(2*len(features), kernel_initializer='glorot_normal', activation='relu', input_dim=len(features)))
-modelDNN.add(Dense(len(features), kernel_initializer='glorot_normal', activation='relu'))
-modelDNN.add(Dropout(0.1))
-modelDNN.add(Dense(1, kernel_initializer='glorot_uniform', activation='sigmoid'))
+modelDNN_DNN_1=Sequential()
+modelDNN_DNN_1.add(Dense(2*len(features["DNN_1"]), kernel_initializer='glorot_normal', activation='relu', input_dim=len(features["DNN_1"])))
+modelDNN_DNN_1.add(Dense(len(features["DNN_1"]), kernel_initializer='glorot_normal', activation='relu'))
+modelDNN_DNN_1.add(Dropout(0.1))
+modelDNN_DNN_1.add(Dense(1, kernel_initializer='glorot_uniform', activation='sigmoid'))
+
+DNNDict={
+         "DNN_1":{'epochs':10, 'batchsize':100, 'lr':0.001, 'model':modelDNN_DNN_1}
+        }
+
 
 #####################################################################
 
