@@ -72,6 +72,7 @@ def plot_roc_curve(df, score_column, tpr_threshold=0, ax=None, color=None, lines
     auc=metrics.auc(fpr, tpr)
     label=label+' auc='+str(round(auc*100,1))+'%'
     ax.plot(tpr, fpr, label=label, color=color, linestyle=linestyle,linewidth=2,alpha=0.7)
+    ax.set_yscale("log")
     ax.legend()
     return auc
 
@@ -85,6 +86,7 @@ def plot_single_roc_point(df, var='Fall17isoV1wpLoose',
     backgroundrej=backgroundrej/(backgroundpass+backgroundrej)
     signaleff=signalpass/(signalpass+signalrej)
     ax.plot([signaleff], [1-backgroundrej], marker=marker, color=color, markersize=markersize, label=label)
+    ax.set_yscale("log")
     ax.legend()
 
 
