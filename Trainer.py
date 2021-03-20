@@ -53,10 +53,10 @@ def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed',
                            label=label+' '+sample, ax=ax, density=True, ls=ls, weights =group[Wt],linewidth=2)
     #ax.set_ylabel("density")
     ax.set_xlabel(column)
-    ax.legend(fontsize=10)
     ax.set_title(title)
     if logscale:
         ax.set_yscale("log", nonposy='clip')
+    ax.legend(loc='best')
 
 
 # In[3]:
@@ -243,9 +243,10 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return X_train, Y_train, Wt_train, X_test, Y_test, Wt_test
 
 
-# In[13]:
+# In[19]:
 
 
+import pickle
 for MVA in Conf.MVAs:
     
     if 'XGB' in MVA:
@@ -260,7 +261,8 @@ for MVA in Conf.MVAs:
         prGreen("Performing XGB grid search")
         cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],scoring = 'accuracy',cv=3,verbose=1)
         search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=1)
-
+        pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA+"_"+"modelXGB.pkl", "wb"))
+        #modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
         prGreen("Expected accuracy of XGB model = "+str((np.round(np.average(search.best_score_),3))*100)+'%')
         #prGreen("Expected accuracy of XGB model = "+str((np.average(search.best_score_))*100)+'%')
         prGreen("XGB Best Parameters")
@@ -290,7 +292,7 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"XGBROC.png")
 
 
-# In[18]:
+# In[14]:
 
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -305,7 +307,7 @@ for MVA in Conf.MVAs:
         modelDNN.compile(loss='binary_crossentropy', optimizer=Adam(lr=Conf.DNNDict[MVA]['lr']), metrics=['accuracy',])
         train_history = modelDNN.fit(X_train,Y_train,epochs=Conf.DNNDict[MVA]['epochs'],batch_size=Conf.DNNDict[MVA]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
-        modelDNN.save(Conf.OutputDirName+"/modelDNN.h5")
+        modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
         df_final.loc[TrainIndices,MVA+"_pred"]=modelDNN.predict(X_train)
         df_final.loc[TestIndices,MVA+"_pred"]=modelDNN.predict(X_test)
     
@@ -328,14 +330,14 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"DNNROC.png")
 
 
-# In[19]:
+# In[15]:
 
 
 if 'Genetic' in Conf.MVAs:
     prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
 
 
-# In[20]:
+# In[16]:
 
 
 ##PlotFinalROC
@@ -359,11 +361,12 @@ if len(Conf.MVAs)>0:
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[21]:
+# In[22]:
 
 
 os.system("convert "+Conf.OutputDirName+"/TotalStat_TrainANDTest.png "+Conf.OutputDirName+"/*ROC*png "+Conf.OutputDirName+"/mydoc.pdf")
 prGreen("Done!! Please find the quick look pdf here "+Conf.OutputDirName+"/mydoc.pdf")
+prGreen("Individual plots can be found in directory: "+Conf.OutputDirName+'/')
 
 
 # In[ ]:
