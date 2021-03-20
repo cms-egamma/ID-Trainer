@@ -13,7 +13,7 @@ git clone https://github.com/cms-egamma/ID-Trainer.git
 source /cvmfs/sft.cern.ch/lcg/views/LCG_97python3/x86_64-centos7-gcc8-opt/setup.sh
 
 ```
-### Create a new config (Just copy the default one and start editing on top of it
+### Create a new config (Just copy the default one and start editing on top of it)
 
 ```
 cp Tools/TrainConfig.py Tools/NewTrainConfig.py
