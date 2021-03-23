@@ -71,7 +71,7 @@ def plot_roc_curve(df, score_column, tpr_threshold=0, ax=None, color=None, lines
     fpr, tpr = fpr[mask], tpr[mask]
     auc=metrics.auc(fpr, tpr)
     label=label+' auc='+str(round(auc*100,1))+'%'
-    ax.plot(tpr, fpr, label=label, color=color, linestyle=linestyle,linewidth=2,alpha=0.7)
+    ax.plot(tpr, fpr, label=label, color=color, linestyle=linestyle,linewidth=1,alpha=0.7)
     ax.set_yscale("log")
     ax.legend(loc='best')
     return auc
@@ -88,6 +88,15 @@ def plot_single_roc_point(df, var='Fall17isoV1wpLoose',
     ax.plot([signaleff], [1-backgroundrej], marker=marker, color=color, markersize=markersize, label=label)
     ax.set_yscale("log")
     ax.legend(loc='best')
+    
+def pngtopdf(ListPattern='*ROC*png',Save="mydoc.pdf"):
+    import glob, PIL.Image
+    L = [PIL.Image.open(f) for f in glob.glob(ListPattern)]
+    for i,Li in enumerate(L):
+        rgb = PIL.Image.new('RGB', Li.size, (255, 255, 255))
+        rgb.paste(Li, mask=Li.split()[3])
+        L[i]=rgb
+    L[0].save(Save, "PDF" ,resolution=100.0, save_all=True, append_images=L[1:])
 
 
 # In[4]:
@@ -243,10 +252,11 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return X_train, Y_train, Wt_train, X_test, Y_test, Wt_test
 
 
-# In[19]:
+# In[13]:
 
 
 import pickle
+import multiprocessing
 for MVA in Conf.MVAs:
     
     if 'XGB' in MVA:
@@ -259,7 +269,12 @@ for MVA in Conf.MVAs:
         xgb_model = xgb.XGBClassifier(objective="binary:logistic", random_state=Conf.RandomState)
         #xgb_model.set_config(verbosity=2)
         prGreen("Performing XGB grid search")
-        cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],scoring = 'accuracy',cv=3,verbose=1)
+        if Conf.Multicore:
+            cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
+                              scoring = 'accuracy',cv=3,verbose=1,n_jobs=2)#multiprocessing.cpu_count())
+        else:
+            cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
+                              scoring = 'accuracy',cv=3,verbose=1)
         search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=1)
         pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA+"_"+"modelXGB.pkl", "wb"))
         #modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
@@ -289,6 +304,11 @@ for MVA in Conf.MVAs:
         axes.set_ylabel("Background efficiency")
         axes.set_xlabel("Signal efficiency")
         axes.set_title("XGB")
+        axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
+            horizontalalignment='center',
+            verticalalignment='center',
+            rotation='vertical',
+            transform=axes.transAxes)
         plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"XGBROC.png")
 
 
@@ -327,6 +347,11 @@ for MVA in Conf.MVAs:
         axes.set_ylabel("Background efficiency")
         axes.set_xlabel("Signal efficiency")
         axes.set_title("DNN")
+        axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
+            horizontalalignment='center',
+            verticalalignment='center',
+            rotation='vertical',
+            transform=axes.transAxes)
         plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"DNNROC.png")
 
 
@@ -361,12 +386,48 @@ if len(Conf.MVAs)>0:
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[22]:
+# In[31]:
 
 
-os.system("convert "+Conf.OutputDirName+"/TotalStat_TrainANDTest.png "+Conf.OutputDirName+"/*ROC*png "+Conf.OutputDirName+"/mydoc.pdf")
-prGreen("Done!! Please find the quick look pdf here "+Conf.OutputDirName+"/mydoc.pdf")
-prGreen("Individual plots can be found in directory: "+Conf.OutputDirName+'/')
+PredMVAs=[]
+for MVA in Conf.MVAs:
+    PredMVAs.append(MVA+'_pred')
+SigEffWPs=Conf.SigEffWPs[:]
+for i,SigEffWPi in enumerate(SigEffWPs):
+    SigEffWPs[i]=int(SigEffWPi.replace('%', ''))/100
+
+if len(Conf.MVAs)>0:
+    prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
+    mydf=df_final.query("TrainDataset==1 & EleType==1")[PredMVAs].quantile(SigEffWPs)
+    mydf.insert(0, "WPs", Conf.SigEffWPs, True)
+    mydf.set_index("WPs",inplace=True)
+    prGreen(mydf)
+    mydf.to_html(Conf.OutputDirName+'/'+"SigEffWPs_Train.html")
+    mydf.to_csv(Conf.OutputDirName+'/'+"SigEffWPs_Train.csv")
+    prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
+    mydf2=df_final.query("TrainDataset==0 & EleType==1")[PredMVAs].quantile(SigEffWPs)
+    mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
+    mydf2.set_index("WPs",inplace=True)
+    prGreen(mydf2)
+    mydf2.to_html(Conf.OutputDirName+'/'+"SigEffWPs_Test.html")
+    mydf2.to_csv(Conf.OutputDirName+'/'+"SigEffWPs_Test.csv")
+
+
+# In[30]:
+
+
+pngtopdf(ListPattern=Conf.OutputDirName+'/*ROC*png',Save=Conf.OutputDirName+"/mydocROC.pdf")
+pngtopdf(ListPattern=Conf.OutputDirName+'/*MVA*png',Save=Conf.OutputDirName+"/mydocMVA.pdf")
+
+prGreen("Done!! Please find the quick look ROC pdf here "+Conf.OutputDirName+"/mydocROC.pdf")
+prGreen("Done!! Please find the quick look MVA pdf here "+Conf.OutputDirName+"/mydocMVA.pdf")
+prGreen("Individual plots and saved model files can be found in directory: "+Conf.OutputDirName+'/')
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

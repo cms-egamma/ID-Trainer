@@ -13,6 +13,7 @@ from tensorflow.keras.layers import Dropout
 OutputDirName = 'Output' #All plots, models, config file will be stored here
 RandomState=42 # Choose the same number everytime for reproducibility
 Debug=True # If True, only a 10% of events/objects are used for either Signal or background
+Multicore=True #If True all CPU cores available are used XGB 
 
 #Files, Cuts and XsecWts should have the same number of elements
 SigFiles = [
@@ -134,6 +135,8 @@ DNNDict={
 
 
 #####################################################################
+
+SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 
 ######### Reweighting scheme #Feature not available but planned
 #Reweighting = 'pt-etaSig'
