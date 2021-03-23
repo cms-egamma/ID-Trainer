@@ -271,10 +271,10 @@ for MVA in Conf.MVAs:
         prGreen("Performing XGB grid search")
         if Conf.Multicore:
             cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
-                              scoring = 'accuracy',cv=3,verbose=1,n_jobs=2)#multiprocessing.cpu_count())
+                              scoring='neg_log_loss',cv=3,verbose=1,n_jobs=2)#multiprocessing.cpu_count())
         else:
             cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
-                              scoring = 'accuracy',cv=3,verbose=1)
+                              scoring='neg_log_loss',cv=3,verbose=1)
         search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=1)
         pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA+"_"+"modelXGB.pkl", "wb"))
         #modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
