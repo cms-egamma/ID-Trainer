@@ -89,9 +89,11 @@ def plot_single_roc_point(df, var='Fall17isoV1wpLoose',
     ax.set_yscale("log")
     ax.legend(loc='best')
     
-def pngtopdf(ListPattern='*ROC*png',Save="mydoc.pdf"):
+def pngtopdf(ListPattern=[],Save="mydoc.pdf"):
     import glob, PIL.Image
-    L = [PIL.Image.open(f) for f in glob.glob(ListPattern)]
+    L=[]
+    for List in ListPattern:
+        L+= [PIL.Image.open(f) for f in glob.glob(List)]
     for i,Li in enumerate(L):
         rgb = PIL.Image.new('RGB', Li.size, (255, 255, 255))
         rgb.paste(Li, mask=Li.split()[3])
@@ -124,11 +126,15 @@ if Conf.Debug==True:
 # In[6]:
 
 
-
+if len(Conf.MVAs)>0:
+    for MVAd in Conf.MVAs:
+        os.system("mkdir -p " + Conf.OutputDirName+"/"+MVAd)
 prGreen("Making output directory")
 os.system("mkdir -p " + Conf.OutputDirName)
-os.system("cp "+TrainConfig+".py ./"+ Conf.OutputDirName+"/")
-os.system("cp Trainer.py ./"+ Conf.OutputDirName+"/")
+os.system("mkdir -p " + Conf.OutputDirName+"/CodeANDConfig")
+os.system("mkdir -p " + Conf.OutputDirName+"/Thresholds")
+os.system("cp "+TrainConfig+".py ./"+ Conf.OutputDirName+"/CodeANDConfig/")
+os.system("cp Trainer.py ./"+ Conf.OutputDirName+"/CodeANDConfig/")
 
 
 # In[7]:
@@ -221,7 +227,7 @@ def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1"):
         axes[m-1].set_xlabel(features[m-1])
         axes[m-1].set_yscale("log")
         axes[m-1].set_title(features[m-1]+" ("+Set+" Dataset)")
-    plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"featureplots_"+Set+".png")
+    plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots_"+Set+".png")
 
 
 # In[ ]:
@@ -276,9 +282,9 @@ for MVA in Conf.MVAs:
             cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
                               scoring='neg_log_loss',cv=3,verbose=1)
         search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=1)
-        pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA+"_"+"modelXGB.pkl", "wb"))
+        pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"modelXGB.pkl", "wb"))
         #modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
-        prGreen("Expected accuracy of XGB model = "+str((np.round(np.average(search.best_score_),3))*100)+'%')
+        prGreen("Expected neg log loss of XGB model = "+str((np.round(np.average(search.best_score_),3))*100)+'%')
         #prGreen("Expected accuracy of XGB model = "+str((np.average(search.best_score_))*100)+'%')
         prGreen("XGB Best Parameters")
     
@@ -290,9 +296,9 @@ for MVA in Conf.MVAs:
     
         prGreen("Plotting output response for XGB")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=True)
-        plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=True)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"XGBMVA.png")
+        plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
+        plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBMVA.png")
     
         prGreen("Plotting ROC for XGB")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
@@ -309,7 +315,7 @@ for MVA in Conf.MVAs:
             verticalalignment='center',
             rotation='vertical',
             transform=axes.transAxes)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"XGBROC.png")
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.png")
 
 
 # In[14]:
@@ -327,15 +333,15 @@ for MVA in Conf.MVAs:
         modelDNN.compile(loss='binary_crossentropy', optimizer=Adam(lr=Conf.DNNDict[MVA]['lr']), metrics=['accuracy',])
         train_history = modelDNN.fit(X_train,Y_train,epochs=Conf.DNNDict[MVA]['epochs'],batch_size=Conf.DNNDict[MVA]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
-        modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
+        modelDNN.save(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"modelDNN.h5")
         df_final.loc[TrainIndices,MVA+"_pred"]=modelDNN.predict(X_train)
         df_final.loc[TestIndices,MVA+"_pred"]=modelDNN.predict(X_test)
     
         prGreen("Plotting output response for DNN")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=True)
-        plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=True)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"DNNMVA.png")
+        plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
+        plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNMVA.png")
     
         prGreen("Plotting ROC for DNN")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
@@ -352,7 +358,7 @@ for MVA in Conf.MVAs:
             verticalalignment='center',
             rotation='vertical',
             transform=axes.transAxes)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"_"+"DNNROC.png")
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.png")
 
 
 # In[15]:
@@ -386,7 +392,7 @@ if len(Conf.MVAs)>0:
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[31]:
+# In[17]:
 
 
 PredMVAs=[]
@@ -402,22 +408,22 @@ if len(Conf.MVAs)>0:
     mydf.insert(0, "WPs", Conf.SigEffWPs, True)
     mydf.set_index("WPs",inplace=True)
     prGreen(mydf)
-    mydf.to_html(Conf.OutputDirName+'/'+"SigEffWPs_Train.html")
-    mydf.to_csv(Conf.OutputDirName+'/'+"SigEffWPs_Train.csv")
+    mydf.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.html")
+    mydf.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.csv")
     prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
     mydf2=df_final.query("TrainDataset==0 & EleType==1")[PredMVAs].quantile(SigEffWPs)
     mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
     mydf2.set_index("WPs",inplace=True)
     prGreen(mydf2)
-    mydf2.to_html(Conf.OutputDirName+'/'+"SigEffWPs_Test.html")
-    mydf2.to_csv(Conf.OutputDirName+'/'+"SigEffWPs_Test.csv")
+    mydf2.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.html")
+    mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[30]:
+# In[ ]:
 
 
-pngtopdf(ListPattern=Conf.OutputDirName+'/*ROC*png',Save=Conf.OutputDirName+"/mydocROC.pdf")
-pngtopdf(ListPattern=Conf.OutputDirName+'/*MVA*png',Save=Conf.OutputDirName+"/mydocMVA.pdf")
+pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*ROC*png',Conf.OutputDirName+'/*ROC*png'],Save=Conf.OutputDirName+"/mydocROC.pdf")
+pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*MVA*png'],Save=Conf.OutputDirName+"/mydocMVA.pdf")
 
 prGreen("Done!! Please find the quick look ROC pdf here "+Conf.OutputDirName+"/mydocROC.pdf")
 prGreen("Done!! Please find the quick look MVA pdf here "+Conf.OutputDirName+"/mydocMVA.pdf")

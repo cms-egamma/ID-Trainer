@@ -14,6 +14,7 @@ OutputDirName = 'Output' #All plots, models, config file will be stored here
 RandomState=42 # Choose the same number everytime for reproducibility
 Debug=True # If True, only a 10% of events/objects are used for either Signal or background
 Multicore=True #If True all CPU cores available are used XGB 
+MVAlogplot=False #If true, MVA outputs are plotted in log scale
 
 #Files, Cuts and XsecWts should have the same number of elements
 SigFiles = [
