@@ -15,7 +15,7 @@ def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed',
             label="background"
         else:
             label="signal"
-        group[column].hist(bins=bins, histtype=histtype, alpha=1,
+        group[column].hist(bins=bins, histtype=histtype, alpha=alpha,
                            label=label+' '+sample, ax=ax, density=True, ls=ls, weights =group[Wt],linewidth=2)
     #ax.set_ylabel("density")
     ax.set_xlabel(column)
@@ -73,4 +73,19 @@ def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",Outp
         axes[m-1].set_xlabel(features[m-1])
         axes[m-1].set_yscale("log")
         axes[m-1].set_title(features[m-1]+" ("+Set+" Dataset)")
-    plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots_"+Set+".png")
+    plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots_"+Set+".pdf")
+
+def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="EleType",label=["Background","Signal"],weight="NewWt"):
+    fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
+    prGreen("Making Combined"+" dataset feature plots")
+    for m in range(len(features)):
+        for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby(cat):
+            group_df[features[m-1]].hist(histtype='stepfilled', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Train", ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=4)
+        for i,group_df in df_final[df_final['Dataset'] == "Test"].groupby(cat):
+            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Test", ax=axes[m-1], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=4)
+            #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
+        axes[m-1].legend(loc='upper right')
+        axes[m-1].set_xlabel(features[m-1])
+        axes[m-1].set_yscale("log")
+        axes[m-1].set_title(features[m-1])
+    plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots"+".pdf")
