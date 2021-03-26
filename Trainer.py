@@ -153,6 +153,7 @@ fig, axes = plt.subplots(1, 1, figsize=(10, 5))
 sns.countplot(x="Type", data=df_final, ax=axes,hue='Dataset',palette=['#432371',"#FAAE7B"])
 axes.set_title("Number of samples")
 #axes.set_yscale("log")
+plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.pdf")
 plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
     
 
@@ -201,6 +202,7 @@ for MVA in Conf.MVAs:
     if 'XGB' in MVA:
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Train",MVA=MVA,OutputDirName=Conf.OutputDirName)
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
+        MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
         prGreen(MVA+" Training starting")
         import xgboost as xgb
@@ -231,6 +233,7 @@ for MVA in Conf.MVAs:
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
         plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
         plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBMVA.pdf")
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBMVA.png")
     
         prGreen("Plotting ROC for XGB")
@@ -248,6 +251,7 @@ for MVA in Conf.MVAs:
             verticalalignment='center',
             rotation='vertical',
             transform=axes.transAxes)
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.pdf")
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.png")
 
 
@@ -259,6 +263,7 @@ for MVA in Conf.MVAs:
     if 'DNN' in MVA:
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Train",MVA=MVA,OutputDirName=Conf.OutputDirName)
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
+        MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
         prGreen("DNN fitting running")
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
@@ -274,6 +279,7 @@ for MVA in Conf.MVAs:
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
         plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
         plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNMVA.pdf")
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNMVA.png")
     
         prGreen("Plotting ROC for DNN")
@@ -291,6 +297,7 @@ for MVA in Conf.MVAs:
             verticalalignment='center',
             rotation='vertical',
             transform=axes.transAxes)
+        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.pdf")
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.png")
 
 
@@ -322,6 +329,7 @@ if len(Conf.MVAs)>0:
         verticalalignment='center',
         rotation='vertical',
         transform=axes.transAxes)
+plt.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
@@ -352,7 +360,7 @@ if len(Conf.MVAs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[17]:
+# In[18]:
 
 
 pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*ROC*png',Conf.OutputDirName+'/*ROC*png'],Save=Conf.OutputDirName+"/mydocROC.pdf")
