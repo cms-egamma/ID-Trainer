@@ -58,6 +58,9 @@ else:
     importConfig=TrainConfig.replace("/", ".")
     exec("import "+importConfig+" as Conf")
     
+if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
+if not hasattr(Conf, 'MVAlogplot'): Conf.MVAlogplot=False 
+if not hasattr(Conf, 'Multicore'): Conf.Multicore=False 
 
 
 # In[5]:
@@ -139,12 +142,6 @@ df_final.loc[TestIndices,'TrainDataset'] = 0
 df_final["NewWt"]=1
 
 
-# In[ ]:
-
-
-
-
-
 # In[10]:
 
 
@@ -156,18 +153,6 @@ axes.set_title("Number of samples")
 plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.pdf")
 plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
     
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
 
 # In[11]:
@@ -360,7 +345,7 @@ if len(Conf.MVAs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[18]:
+# In[17]:
 
 
 pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*ROC*png',Conf.OutputDirName+'/*ROC*png'],Save=Conf.OutputDirName+"/mydocROC.pdf")
@@ -371,26 +356,12 @@ prGreen("Done!! Please find the quick look MVA pdf here "+Conf.OutputDirName+"/m
 prGreen("Individual plots and saved model files can be found in directory: "+Conf.OutputDirName+'/')
 
 
-# In[ ]:
+# In[19]:
 
 
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
+if hasattr(Conf, 'SaveDataFrameCSV'): 
+    if Conf.SaveDataFrameCSV:
+        prGreen("Saving DataFrame : Can take a lot of time")
+        os.system("mkdir -p " + Conf.OutputDirName+"/DataFrame")    
+        df_final.to_csv(Conf.OutputDirName+'/DataFrame/df_final.csv')
 
