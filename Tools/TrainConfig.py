@@ -11,10 +11,7 @@ from tensorflow.keras.layers import Dropout
 ####Start here
 #####################################################################
 OutputDirName = 'Output' #All plots, models, config file will be stored here
-RandomState=42 # Choose the same number everytime for reproducibility
 Debug=True # If True, only a 10% of events/objects are used for either Signal or background
-Multicore=True #If True all CPU cores available are used XGB 
-MVAlogplot=False #If true, MVA outputs are plotted in log scale
 
 #Files, Cuts and XsecWts should have the same number of elements
 SigFiles = [
@@ -149,3 +146,9 @@ Flateta : Binned flat in eta (default binning)
 pt-etaSig : To Signal pt-eta spectrum 
 pt-etaBkg : To Background pt-eta spectrum
 '''
+
+#####Optional Features
+#SaveDataFrameCSV=False #True will save the final dataframe with all features and MAV predictions
+#RandomState=42 # Choose the same number everytime for reproducibility
+#MVAlogplot=False #If true, MVA outputs are plotted in log scale
+#Multicore=True #If True all CPU cores available are used XGB 
