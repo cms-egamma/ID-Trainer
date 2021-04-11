@@ -26,6 +26,7 @@ from tensorflow.keras.layers import Dropout
 
 
 from Tools.PlotTools import *
+import Tools.ptetaRwt as ptetaRwt
 
 
 # In[3]:
@@ -125,9 +126,13 @@ Bkgdf[cat]=0
 Sigdf["Type"]="Signal"
 Bkgdf["Type"]="Background"
 
-#Reweighing
-Sigdf[weight]=1
-Bkgdf[weight]=1
+if Conf.Reweighting=='Nothing':
+    Sigdf[weight]=Sigdf['xsecwt']
+    Bkgdf[weight]=Bkgdf['xsecwt']
+if Conf.Reweighting=='ptetaSig':
+    Sigdf[weight],Bkgdf[weight]=ptetaRwt.ptetaRwtTested(Sigdf.copy(),Bkgdf.copy(),Conf.ptbins,Conf.etabins,'xsecwt',weight,ele_pt='ele_pt',scl_eta='scl_eta',od=Conf.OutputDirName)
+if Conf.Reweighting=='ptetaBkg':
+    Bkgdf[weight],Sigdf[weight]=ptetaRwt.ptetaRwtTested(Bkgdf.copy(),Sigdf.copy(),Conf.ptbins,Conf.etabins,'xsecwt',weight,ele_pt='ele_pt',scl_eta='scl_eta',od=Conf.OutputDirName)
 
 df_final=pd.concat([Sigdf,Bkgdf],ignore_index=True, sort=False)
 from sklearn.model_selection import train_test_split
@@ -166,15 +171,7 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     X_test = df_final.loc[TestIndices,features]
     Y_test = df_final.loc[TestIndices,cat]
     Wt_test = df_final.loc[TestIndices,weight]
-
-    X_train = np.asarray(X_train)
-    Y_train = np.asarray(Y_train)
-    Wt_train = np.asarray(Wt_train)
-    
-    X_test = np.asarray(X_test)
-    Y_test = np.asarray(Y_test)
-    Wt_test = np.asarray(Wt_test)
-    return X_train, Y_train, Wt_train, X_test, Y_test, Wt_test
+    return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
 # In[12]:
@@ -356,7 +353,7 @@ prGreen("Done!! Please find the quick look MVA pdf here "+Conf.OutputDirName+"/m
 prGreen("Individual plots and saved model files can be found in directory: "+Conf.OutputDirName+'/')
 
 
-# In[19]:
+# In[18]:
 
 
 if hasattr(Conf, 'SaveDataFrameCSV'): 

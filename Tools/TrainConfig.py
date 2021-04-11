@@ -137,16 +137,14 @@ DNNDict={
 SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 
 ######### Reweighting scheme #Feature not available but planned
-Reweighting = 'pteta'
+Reweighting = 'ptetaSig'
 ptbins = [10,30,40,50,100,5000] 
 etabins = [-1.6,-1.0,1.0,1.2,1.6]
 '''
 Possible choices :
-None : No reweighting
-FlatpT : Binned flat in pT (default binning)
-Flateta : Binned flat in eta (default binning)
-pt-etaSig : To Signal pt-eta spectrum 
-pt-etaBkg : To Background pt-eta spectrum
+Nothing : No reweighting
+ptetaSig : To Signal pt-eta spectrum 
+ptetaBkg : To Background pt-eta spectrum
 '''
 
 #####Optional Features
