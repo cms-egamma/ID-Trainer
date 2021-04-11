@@ -47,17 +47,17 @@ BkgCuts= [
 #Any extra xsec weight : Useful when stitching samples for either signal or background : '1' means no weight
 BkgXsecWts=[
     #For File 1 
-    1] #Weights same as number of files (Kept like this because it maybe different for different files) 
+    2] #Weights same as number of files (Kept like this because it maybe different for different files) 
 
 #####################################################################
 
 testsize=0.2 #(0.2 means 20%)
 
 #Common cuts for both signal and background (Would generally correspond to the training region)
-CommonCut = "(ele_pt > 10) & (abs(scl_eta)>1.566)" 
-#This is endcap and pt>10 GeV
-#barrel would be
-#(ele_pt > 10) & (abs(scl_eta)<1.442)
+CommonCut = "(ele_pt > 10) & (abs(scl_eta)<1.442)" 
+#This is barrel and pt>10 GeV
+#endcap would be
+#(ele_pt > 10) & (abs(scl_eta)<1.566)
 
 Tree = "ntuplizer/tree" #Location/Name of tree inside Root files
 
@@ -137,7 +137,9 @@ DNNDict={
 SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 
 ######### Reweighting scheme #Feature not available but planned
-#Reweighting = 'pt-etaSig'
+Reweighting = 'pteta'
+ptbins = [10,30,40,50,100,5000] 
+etabins = [-1.6,-1.0,1.0,1.2,1.6]
 '''
 Possible choices :
 None : No reweighting
