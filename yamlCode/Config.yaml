@@ -1,0 +1,85 @@
+OutputDirName: 'OutputYAML' #All plots, models, config file will be stored here
+Debug: True # If True, only a 10% of events/objects are used for either Signal or background
+RandomState: 42
+
+LoadSavedDataFrame: True
+SaveDataFrame: False # Only matters if LoadSavedDataFrame is False
+#Files, Cuts and XsecWts should have the same number of elements
+ClassKinds:
+    
+    "DYJets":
+        FileLocations:
+        - '/eos/user/a/akapoor/SWAN_projects/PFNtuples/DYJets_incl_MLL-50_TuneCP5_14TeV-madgraphMLM-pythia8_NEv_3943691_debug.root'
+        Cuts:
+        - "(matchedToGenEle == 1 | matchedToGenEle == 2) & (matchedToGenPhoton==0)"
+        Wts:
+        - 1
+        Trees:
+        - "ntuplizer/tree"
+    
+    "bcTOEQCD":
+        FileLocations:
+        - '/eos/user/a/akapoor/SWAN_projects/PFNtuples/QCD_Pt-15to20_bcToE_TuneCP5_13TeV_Run2_NEv_4316068_debug.root'
+        #'/eos/user/a/akapoor/SWAN_projects/PFNtuples/QCD_Pt-20to30_bcToE_TuneCP5_13TeV_Run2_NEv_8694646_debug.root',
+        #'/eos/user/a/akapoor/SWAN_projects/PFNtuples/QCD_Pt-30to80_bcToE_TuneCP5_13TeV_Run2_NEv_15177630_debug.root',
+        #'/eos/user/a/akapoor/SWAN_projects/PFNtuples/QCD_Pt-80to170_bcToE_TuneCP5_13TeV_Run2_NEv_14934946_debug.root',
+        #'/eos/user/a/akapoor/SWAN_projects/PFNtuples/QCD_Pt-170to250_bcToE_TuneCP5_13TeV_Run2_NEv_9096781_debug.root',
+        - '/eos/user/a/akapoor/SWAN_projects/PFNtuples/QCD_Pt-250toInf_bcToE_TuneCP5_13TeV_Run2_NEv_10191317_debug.root'
+        Cuts:
+        - '(matchedToGenEle != 1) & (matchedToGenEle != 2) & (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & ((entry) %100 ==0)'
+        #'(matchedToGenEle != 1) & (matchedToGenEle != 2) & (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & ((entry) %100 ==0)',
+        #'(matchedToGenEle != 1) & (matchedToGenEle != 2) & (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & ((entry) %100 ==0)',
+        #'(matchedToGenEle != 1) & (matchedToGenEle != 2) & (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & ((entry) %100 ==0)',
+        - '(matchedToGenEle != 1) & (matchedToGenEle != 2) & (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & ((entry) %100 ==0)'
+        Wts:
+        - 186200.0/4316068 
+        #303800.0/8694646, 362300.0/15177630, 33700.0/14934946, 2125.0/9096781, 
+        - 562.5/10191317
+        Trees:
+        - "ntuplizer/tree"
+        #"ntuplizer/tree","ntuplizer/tree","ntuplizer/tree","ntuplizer/tree",
+        - "ntuplizer/tree"
+    
+    "GJet":
+        FileLocations:
+        - '/eos/user/a/akapoor/SWAN_projects/PFNtuples/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_14TeV_Pythia8_NEv_7869218_debug.root'
+        - '/eos/user/a/akapoor/SWAN_projects/PFNtuples/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_14TeV_Pythia8_NEv_10406345_debug.root'
+        Cuts:
+        - "(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==0) & (matchedToGenTauJet==0) & (matchedToGenPhoton==1) & ((entry) %10 ==0)"
+        - "(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==0) & (matchedToGenTauJet==0) & (matchedToGenPhoton==1) & ((entry) %10 ==0)"
+        Wts:
+        - 232.8/7869218
+        - 872.8/10406345
+        Trees:
+        - "ntuplizer/tree"
+        - "ntuplizer/tree"
+
+Splitting:
+    CriteriaBased: False
+    Train_selection_criteria: '((entry) %2 ==0)' #Only used if CriteriaBased is True
+    Test_selection_criteria: '((entry) %2! =0)' #Only used if CriteriaBased is True
+    testsize: 0.2 #Only used if CriteriaBased is False
+#testsize: 0.2 #(0.2 means 20%) #
+
+#Common cuts for both signal and background (Would generally correspond to the training region)
+CommonCut:  "(ele_pt > 10) & (abs(scl_eta)<1.442)" 
+#This is endcap and pt>10 GeV
+#barrel would be
+#(ele_pt > 10) & (abs(scl_eta)<1.442)
+
+################################
+
+#MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
+MVAs:
+    "XGB_1":
+        color : "green"
+        label : "XGB masscut"
+        features : ["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"]
+    "XGB_2":
+        color : "blue"
+        label : "XGB low"
+        features : ["ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"]
+    "DNN_1":
+        color : "red"
+        label : "DNN HHWW"
+        features : ["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"]
