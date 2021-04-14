@@ -5,32 +5,10 @@
 
 
 import sys
-import os
-import uproot
-import glob
-import pandas as pd
+import tensorflow as tf
+import random
 import numpy as np
-import ROOT
-import matplotlib.pyplot as plt
-import json
-os.system("")
-
-import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Activation
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Dropout
-
-
-# In[2]:
-
-
-from Tools.PlotTools import *
-import Tools.ptetaRwt as ptetaRwt
-
-
-# In[3]:
-
+tf.reset_default_graph()
 
 def in_ipynb():
     try:
@@ -42,26 +20,68 @@ def in_ipynb():
             return False
     except NameError:
         return False
-
-
-# In[4]:
-
-
-
+    
 if in_ipynb(): 
     print("In IPython")
     exec("import Tools.TrainConfig as Conf")
     TrainConfig="Tools/TrainConfig"
 else:
     TrainConfig=sys.argv[1]
-    prGreen("Importing settings from "+ TrainConfig.replace("/", "."))
+    print("Importing settings from "+ TrainConfig.replace("/", "."))
     #exec("from "+TrainConfig+" import *")
     importConfig=TrainConfig.replace("/", ".")
     exec("import "+importConfig+" as Conf")
     
-if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
+
+
+# In[2]:
+
+
 if not hasattr(Conf, 'MVAlogplot'): Conf.MVAlogplot=False 
 if not hasattr(Conf, 'Multicore'): Conf.Multicore=False 
+if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
+
+
+# In[3]:
+
+
+tf.random.set_random_seed(Conf.RandomState)
+random.seed(Conf.RandomState)
+np.random.seed(Conf.RandomState)
+
+import os
+os.system("")
+import uproot
+import glob
+import pandas as pd
+import numpy as np
+import ROOT
+import matplotlib.pyplot as plt
+import json
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Dropout
+
+
+# In[4]:
+
+
+from Tools.PlotTools import *
+import Tools.ptetaRwt as ptetaRwt
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[5]:

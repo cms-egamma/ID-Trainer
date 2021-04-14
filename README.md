@@ -29,3 +29,14 @@ python Trainer.py Tools/NewTrainConfig
 ### The Trainer.py will read the settings from the config file and run training
 
 ## Suggestion : Do not remove or touch the original Tools/TrainConfig.py (Keep it for reference)
+
+
+# What can this framework do?
+
+<img src="READMEDocs/SampleROC.png" alt="drawing" width="30%"/>
+
+# Projects using the framework
+
+1) Run-3 Ele MVA ID
+2) Close photon analysis
+3) H->eeg analysis
