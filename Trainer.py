@@ -45,7 +45,7 @@ if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
 # In[3]:
 
 
-tf.random.set_random_seed(Conf.RandomState)
+tf.compat.v1.random.set_random_seed(Conf.RandomState)
 random.seed(Conf.RandomState)
 np.random.seed(Conf.RandomState)
 
@@ -146,12 +146,12 @@ Bkgdf[cat]=0
 Sigdf["Type"]="Signal"
 Bkgdf["Type"]="Background"
 
-if Conf.Reweighting=='Nothing':
+if Conf.Reweighing=='Nothing':
     Sigdf[weight]=Sigdf['xsecwt']
     Bkgdf[weight]=Bkgdf['xsecwt']
-if Conf.Reweighting=='ptetaSig':
+if Conf.Reweighing=='ptetaSig':
     Sigdf[weight],Bkgdf[weight]=ptetaRwt.ptetaRwtTested(Sigdf.copy(),Bkgdf.copy(),Conf.ptbins,Conf.etabins,'xsecwt',weight,ele_pt='ele_pt',scl_eta='scl_eta',od=Conf.OutputDirName)
-if Conf.Reweighting=='ptetaBkg':
+if Conf.Reweighing=='ptetaBkg':
     Bkgdf[weight],Sigdf[weight]=ptetaRwt.ptetaRwtTested(Bkgdf.copy(),Sigdf.copy(),Conf.ptbins,Conf.etabins,'xsecwt',weight,ele_pt='ele_pt',scl_eta='scl_eta',od=Conf.OutputDirName)
 
 df_final=pd.concat([Sigdf,Bkgdf],ignore_index=True, sort=False)
@@ -164,7 +164,7 @@ df_final.loc[TestIndices,'Dataset'] = "Test"
 df_final.loc[TrainIndices,'TrainDataset'] = 1
 df_final.loc[TestIndices,'TrainDataset'] = 0
 
-df_final["NewWt"]=1
+#df_final["NewWt"]=1
 
 
 # In[10]:
@@ -206,6 +206,11 @@ for MVA in Conf.MVAs:
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
         MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
+        prGreen(MVA+" Applying "+Conf.Scaler[MVA])
+        exec("from sklearn.preprocessing import "+Conf.Scaler[MVA])
+        exec("sc = "+Conf.Scaler[MVA]+"()")
+        X_train = sc.fit_transform(X_train)
+        X_test = sc.transform(X_test)
         prGreen(MVA+" Training starting")
         import xgboost as xgb
         from sklearn.model_selection import cross_val_score, GridSearchCV
@@ -267,6 +272,11 @@ for MVA in Conf.MVAs:
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
         MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
+        prGreen(MVA+" Applying "+Conf.Scaler[MVA])
+        exec("from sklearn.preprocessing import "+Conf.Scaler[MVA])
+        exec("sc = "+Conf.Scaler[MVA]+"()")
+        X_train = sc.fit_transform(X_train)
+        X_test = sc.transform(X_test)
         prGreen("DNN fitting running")
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
         modelDNN=Conf.DNNDict[MVA]['model']
