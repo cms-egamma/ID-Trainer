@@ -102,6 +102,10 @@ XGBGridSearch= {
                 "XGB_1": {'learning_rate':[0.1, 0.01, 0.001]},
                 "XGB_2": {'gamma':[0.5, 1],'learning_rate':[0.1, 0.01]},
                }
+
+Scaler = {"XGB_1":"MinMaxScaler",
+          "XGB_2":"StandardScaler",
+          "DNN_1":"MinMaxScaler" }
 #
 #To choose just one value for a parameter you can just specify value but in a list 
 #Like "XGB_1":{'gamma':[0.5],'learning_rate':[0.1, 0.01]} 
@@ -137,7 +141,7 @@ DNNDict={
 SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 
 ######### Reweighting scheme #Feature not available but planned
-Reweighting = 'ptetaSig'
+Reweighing = 'ptetaSig'
 ptbins = [10,30,40,50,100,5000] 
 etabins = [-1.6,-1.0,1.0,1.2,1.6]
 '''

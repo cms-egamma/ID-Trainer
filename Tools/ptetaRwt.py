@@ -1,4 +1,20 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import matplotlib.pyplot as plt
+
+
+# In[2]:
+
+
+
+
+
+# In[3]:
+
 
 def ptetaplot(ptbins,etabins,data,ax,title):
     etabinstext=[]
@@ -29,6 +45,8 @@ def ptetaRwtTested(Sigdf,Bkgdf,ptbins,etabins,Wt,NWt,ele_pt='ele_pt',scl_eta='sc
     Sdata=[]
     Bdata=[]
     Wtdata=[]
+    Sigdf[NWt]=1
+    Bkgdf[NWt]=1
     for i in range(len(ptbins)):
         Bdatai=[]
         Sdatai=[]
@@ -40,11 +58,16 @@ def ptetaRwtTested(Sigdf,Bkgdf,ptbins,etabins,Wt,NWt,ele_pt='ele_pt',scl_eta='sc
                 Bdatai.append(Bsum)
                 Ssum=Sigdf.query(sel)[Wt].sum()
                 Sdatai.append(Ssum)
-                Bkgdf.loc[sel,NWt]=Ssum/Bsum
-                if Bsum>0:
+                #print("BSum "+str(Bsum))
+                #print("SSum "+str(Ssum))
+                if Bsum>0 and Ssum>0:
+                    #print("Entering1")
                     Wtdatai.append(Ssum/Bsum)
+                    Bkgdf.loc[sel,NWt]=Ssum/Bsum
                 else:
+                    #print("Entering2")
                     Wtdatai.append(1)
+                    Bkgdf.loc[sel,NWt]=1
                 continue 
             if i<(len(ptbins)-1) and j==(len(etabins)-1):
                 sel=ele_pt+'>@ptbins[@i] & '+ele_pt+'<=@ptbins[@i+1] & '+scl_eta+'>@etabins[@j]'
@@ -52,11 +75,16 @@ def ptetaRwtTested(Sigdf,Bkgdf,ptbins,etabins,Wt,NWt,ele_pt='ele_pt',scl_eta='sc
                 Bdatai.append(Bsum)
                 Ssum=Sigdf.query(sel)[Wt].sum()
                 Sdatai.append(Ssum)
-                Bkgdf.loc[sel,NWt]=Ssum/Bsum
-                if Ssum>0:
+                #print("BSum "+str(Bsum))
+                #print("SSum "+str(Ssum))
+                if Bsum>0 and Ssum>0:
+                    #print("Entering1")
                     Wtdatai.append(Ssum/Bsum)
+                    Bkgdf.loc[sel,NWt]=Ssum/Bsum
                 else:
+                    #print("Entering2")
                     Wtdatai.append(1)
+                    Bkgdf.loc[sel,NWt]=1
                 continue 
             if i==(len(ptbins)-1) and j==(len(etabins)-1):
                 sel=ele_pt+'>@ptbins[@i] & '+scl_eta+'>@etabins[@j]'
@@ -64,22 +92,32 @@ def ptetaRwtTested(Sigdf,Bkgdf,ptbins,etabins,Wt,NWt,ele_pt='ele_pt',scl_eta='sc
                 Bdatai.append(Bsum)
                 Ssum=Sigdf.query(sel)[Wt].sum()
                 Sdatai.append(Ssum)
-                Bkgdf.loc[sel,NWt]=Ssum/Bsum
-                if Ssum>0:
+                #print("BSum "+str(Bsum))
+                #print("SSum "+str(Ssum))
+                if Bsum>0 and Ssum>0:
+                    #print("Entering1")
                     Wtdatai.append(Ssum/Bsum)
+                    Bkgdf.loc[sel,NWt]=Ssum/Bsum
                 else:
+                    #print("Entering2")
                     Wtdatai.append(1)
+                    Bkgdf.loc[sel,NWt]=1
                 continue 
             sel=ele_pt+'>@ptbins[@i] & '+ele_pt+'<=@ptbins[@i+1] & scl_eta>@etabins[@j] & '+scl_eta+'<@etabins[@j+1]'
             Bsum=Bkgdf.query(sel)[Wt].sum()
             Bdatai.append(Bsum)
             Ssum=Sigdf.query(sel)[Wt].sum()
             Sdatai.append(Ssum)
-            Bkgdf.loc[sel,NWt]=Ssum/Bsum
-            if Ssum>0:
+            #print("BSum "+str(Bsum))
+            #print("SSum "+str(Ssum))
+            if Bsum>0 and Ssum>0:
+                #print("Entering1")
                 Wtdatai.append(Ssum/Bsum)
+                Bkgdf.loc[sel,NWt]=Ssum/Bsum
             else:
+                #print("Entering2")
                 Wtdatai.append(1)
+                Bkgdf.loc[sel,NWt]=1
         Bdata.append(Bdatai)
         Sdata.append(Sdatai)
         Wtdata.append(Wtdatai)
@@ -97,6 +135,16 @@ def ptetaRwtTested(Sigdf,Bkgdf,ptbins,etabins,Wt,NWt,ele_pt='ele_pt',scl_eta='sc
     plt.savefig(od+"/ReweightingPlot.pdf")
     return Sigdf[NWt],Bkgdf[NWt]
 
+
+# In[4]:
+
+
+
+
+
+# In[5]:
+
+
 def dataptetastrip(data1):
     data=data1
     for ptlist in data:
@@ -105,3 +153,4 @@ def dataptetastrip(data1):
     data[-2] = [sum(i) for i in zip(data[-2], data[-1])]
     data.pop(-1)
     return data
+
