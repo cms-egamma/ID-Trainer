@@ -138,20 +138,23 @@ for BkgFile,BkgXsecWt,BkgCut in zip(Conf.BkgFiles,Conf.BkgXsecWts,Conf.BkgCuts):
     
 
 
-# In[9]:
+# In[10]:
 
 
 Sigdf[cat]=1
 Bkgdf[cat]=0
 
+Conf.modfiydf(Sigdf)
+Conf.modfiydf(Bkgdf)
 
-# In[10]:
+
+# In[11]:
 
 
 Bkgdf.head()
 
 
-# In[11]:
+# In[12]:
 
 
 Sigdf["Type"]="Signal"
@@ -178,7 +181,7 @@ df_final.loc[TestIndices,'TrainDataset'] = 0
 #df_final["NewWt"]=1
 
 
-# In[12]:
+# In[13]:
 
 
 import seaborn as sns
@@ -191,7 +194,7 @@ plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
     
 
 
-# In[13]:
+# In[14]:
 
 
 def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
@@ -205,7 +208,7 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
-# In[14]:
+# In[15]:
 
 
 import pickle
@@ -273,7 +276,7 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.png")
 
 
-# In[15]:
+# In[16]:
 
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -324,14 +327,14 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.png")
 
 
-# In[16]:
+# In[17]:
 
 
 if 'Genetic' in Conf.MVAs:
     prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
 
 
-# In[17]:
+# In[18]:
 
 
 ##PlotFinalROC
@@ -356,7 +359,7 @@ plt.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[18]:
+# In[19]:
 
 
 PredMVAs=[]
@@ -383,7 +386,7 @@ if len(Conf.MVAs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[19]:
+# In[20]:
 
 
 pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*ROC*png',Conf.OutputDirName+'/*ROC*png'],Save=Conf.OutputDirName+"/mydocROC.pdf")
@@ -394,7 +397,7 @@ prGreen("Done!! Please find the quick look MVA pdf here "+Conf.OutputDirName+"/m
 prGreen("Individual plots and saved model files can be found in directory: "+Conf.OutputDirName+'/')
 
 
-# In[20]:
+# In[21]:
 
 
 if hasattr(Conf, 'SaveDataFrameCSV'): 
@@ -402,4 +405,10 @@ if hasattr(Conf, 'SaveDataFrameCSV'):
         prGreen("Saving DataFrame : Can take a lot of time")
         os.system("mkdir -p " + Conf.OutputDirName+"/DataFrame")    
         df_final.to_csv(Conf.OutputDirName+'/DataFrame/df_final.csv')
+
+
+# In[ ]:
+
+
+
 

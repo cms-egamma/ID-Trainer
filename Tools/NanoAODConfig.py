@@ -55,6 +55,11 @@ BkgXsecWts=[
 
 testsize=0.2 #(0.2 means 20%)
 
+
+def modfiydf(df):
+    #Can be used to add new branches
+    df["Electron_SCeta"]=df["Electron_deltaEtaSC"] + df["Electron_eta"]
+
 #Common cuts for both signal and background (Would generally correspond to the training region)
 CommonCut = "(Electron_pt>10)" 
 #This is barrel and pt>10 GeV
@@ -76,11 +81,11 @@ MVALabels = {"XGB_1" : "XGB masscut"
 
 ################################
 features = {
-            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"]
+            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_SCeta"]
            } #Input features to MVA #Should be in your ntuples
 
 feature_bins = {
-                "XGB_1":[100, 100, 100]
+                "XGB_1":[100, 100, 100, 100]
                } #Binning used only for plotting features (should be in the same order as features), does not affect training
 #template 
 #np.linspace(lower boundary, upper boundary, totalbins+1)
