@@ -19,8 +19,8 @@ branches=["Electron_*"]
 ##### For NanoAOD and other un-flattened trees, you can switch on this option to flatten branches with variable lenght for each event (Event level -> Object level)
 flatten=True
 
-##### If True, this will save the datafrme as a csv and the next time you run the same training will different parameters, it will be much faster
-SaveDataFrameCSV=False
+##### If True, this will save the datafrme as a csv and the next time you run the same training with different parameters, it will be much faster
+SaveDataFrameCSV=True
 ##### If branches and files are same a "previous" (not this one) training and SaveDataFrameCSV was True, you can switch on loadfromsaved and it will be much quicker to run the this time
 loadfromsaved=False
 
@@ -152,7 +152,7 @@ SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Poin
 ######### Reweighting scheme #Feature not available but planned
 Reweighing = 'ptetaSig'
 ptbins = [10,30,40,50,100,5000] 
-etabins = [-1.6,-1.0,1.0,1.2,1.6]
+etabins = [-1.6,-1.0,0.0,1.0,1.6]
 ptwtvar='Electron_pt'
 etawtvar='Electron_eta'
 

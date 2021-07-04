@@ -84,7 +84,7 @@ from Tools.PlotTools import *
 import Tools.ptetaRwt as ptetaRwt
 
 
-# In[27]:
+# In[7]:
 
 
 
@@ -300,52 +300,57 @@ if Conf.Reweighing=='ptetaSig' or Conf.Reweighing=='ptetaBkg':
     
 
 
-# In[20]:
+# In[25]:
 
 
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-
-sns.histplot(data=df_final.loc[TrainIndices], x="ele_pt_bin", hue="sample",ax=ax[0], bins=[i for i in range(len(Conf.ptbins)-1)],
-             element="bars", fill=False,
-             weights="xsecwt")
-ax[0].set_yscale("log")
-ax[0].set_title('$p_T$ bins before reweighting')
-
-sns.histplot(data=df_final.loc[TrainIndices], x="ele_pt_bin", hue="sample",ax=ax[1], bins=[i for i in range(len(Conf.ptbins)-1)],
-             element="bars", fill=False,
-             weights="NewWt")
-ax[1].set_yscale("log")
-ax[1].set_title('$p_T$ bins after reweighting')
-
+for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("EleType"):
+    group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=label[i], ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=4)
+    ax[0].set_title("$p_T$ before reweighting")
+    ax[0].legend()
+    group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=label[i], ax=ax[1], density=False, ls='-', weights =group_df["NewWt"],linewidth=4)
+    ax[1].set_title("$p_T$ after reweighting")
+    ax[1].legend()
 fig.savefig(Conf.OutputDirName+"/pT_rwt.pdf")
 
-
-# In[21]:
-
-
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-
-sns.histplot(data=df_final.loc[TrainIndices], x="ele_eta_bin", hue="sample",ax=ax[0], bins=[i for i in range(len(Conf.etabins)-1)],
-             element="bars", fill=False,
-            weights="xsecwt")
-ax[0].set_yscale("log")
-ax[0].set_title('$\eta$ bins before reweighting')
-
-sns.histplot(data=df_final.loc[TrainIndices], x="ele_eta_bin", hue="sample",ax=ax[1], bins=[i for i in range(len(Conf.etabins)-1)],
-             element="bars", fill=False,
-            weights="NewWt")
-ax[1].set_yscale("log")
-ax[1].set_title('$\eta$ bins after reweighting')
-
+for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("EleType"):
+    group_df[Conf.etawtvar].hist(histtype='step', 
+                                 bins=Conf.etabins,
+                                 #[i for i in range(len(Conf.etabins)-1)], 
+                                 alpha=0.7,label=label[i], ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=4)
+    ax[0].set_title("$\eta$ before reweighting")
+    ax[0].legend()
+    group_df[Conf.etawtvar].hist(histtype='step', 
+                                 bins=Conf.etabins,
+                                 alpha=0.7,label=label[i], ax=ax[1], density=False, ls='-', weights =group_df["NewWt"],linewidth=4)
+    ax[1].set_title("$\eta$ after reweighting")
+    ax[1].legend()
 fig.savefig(Conf.OutputDirName+"/eta_rwt.pdf")
+    
 
 
-# In[22]:
+# In[ ]:
 
 
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[26]:
+
+
+'''
 fig, axee = plt.subplots(2, 2, figsize=(30, 10))
 for i in [0,1]:
     axe=axee[0][i]
@@ -361,6 +366,7 @@ for i in [0,1]:
     axe.set_title(label[i]+" after reweighting")
 
 fig.savefig(Conf.OutputDirName+"/eta_pt_rwt.pdf")
+'''
 
 
 # In[ ]:
@@ -369,7 +375,7 @@ fig.savefig(Conf.OutputDirName+"/eta_pt_rwt.pdf")
 
 
 
-# In[23]:
+# In[27]:
 
 
 def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
@@ -383,14 +389,14 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
-# In[24]:
+# In[28]:
 
 
 import pickle
 import multiprocessing
 
 
-# In[25]:
+# In[ ]:
 
 
 for MVA in Conf.MVAs:
@@ -456,7 +462,7 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.png")
 
 
-# In[28]:
+# In[ ]:
 
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -507,14 +513,14 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.png")
 
 
-# In[29]:
+# In[ ]:
 
 
 if 'Genetic' in Conf.MVAs:
     prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
 
 
-# In[30]:
+# In[ ]:
 
 
 ##PlotFinalROC
@@ -539,7 +545,7 @@ plt.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[31]:
+# In[ ]:
 
 
 PredMVAs=[]
@@ -566,7 +572,7 @@ if len(Conf.MVAs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[32]:
+# In[ ]:
 
 
 pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*ROC*png',Conf.OutputDirName+'/*ROC*png'],Save=Conf.OutputDirName+"/mydocROC.pdf")
