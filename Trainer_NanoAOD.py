@@ -51,7 +51,12 @@ np.random.seed(Conf.RandomState)
 
 import os
 os.system("")
-import uproot
+try:
+  import uproot3 as uproot
+except ImportError:
+  import uproot
+  
+#import uproot
 import glob
 import pandas as pd
 import numpy as np
@@ -156,33 +161,46 @@ Bkgdf.head()
 
 # In[12]:
 
+from sklearn.model_selection import train_test_split
 
 Sigdf["Type"]="Signal"
 Bkgdf["Type"]="Background"
 
-if Conf.Reweighing=='Nothing':
-    Sigdf[weight]=Sigdf['xsecwt']
-    Bkgdf[weight]=Bkgdf['xsecwt']
+df_final=pd.concat([Sigdf,Bkgdf],ignore_index=True, sort=False,verify_integrity=True)
+
+dfindexvalues=df_final.index.values.tolist()
+
+SigTrainIndices, SigTestIndices = train_test_split(Sigdf, test_size=Conf.testsize, random_state=Conf.RandomState, shuffle=True)
+BkgTrainIndices, BkgTestIndices = train_test_split(Bkgdf, test_size=Conf.testsize, random_state=Conf.RandomState, shuffle=True)
+
+
+Train=pd.concat([SigTrain,BkgTrain],ignore_index=True, sort=False)
+Test=pd.concat([SigTest,BkgTest],ignore_index=True, sort=False)
+
+
+Train['Dataset'] = "Train"
+Test['Dataset'] = "Test"
+
+Train['TrainDataset'] = "Train"
+Test['TrainDataset'] = "Test"
+
+
 if Conf.Reweighing=='ptetaSig':
-    Sigdf[weight],Bkgdf[weight]=ptetaRwt.ptetaRwtTested(Sigdf.copy(),Bkgdf.copy(),Conf.ptbins,Conf.etabins,'xsecwt',weight,ele_pt=Conf.ptwtvar,scl_eta=Conf.etawtvar,od=Conf.OutputDirName)
+    df_pteta_rwt(Train,cat,ptw=Conf.ptbins,etaw=Conf.etabins,pt=Conf.ptwtvar,eta=Conf.etawtvar,
+                 SumWeightCol='xsecwt',NewWeightCol=weight, target=0,cand=1)
 if Conf.Reweighing=='ptetaBkg':
-    Bkgdf[weight],Sigdf[weight]=ptetaRwt.ptetaRwtTested(Bkgdf.copy(),Sigdf.copy(),Conf.ptbins,Conf.etabins,'xsecwt',weight,ele_pt=Conf.ptwtvar,scl_eta=Conf.etawtvar,od=Conf.OutputDirName)
-
-df_final=pd.concat([Sigdf,Bkgdf],ignore_index=True, sort=False)
-from sklearn.model_selection import train_test_split
-TrainIndices, TestIndices = train_test_split(df_final.index.values.tolist(), test_size=Conf.testsize, random_state=Conf.RandomState, shuffle=True)
-
-df_final.loc[TrainIndices,'Dataset'] = "Train"
-df_final.loc[TestIndices,'Dataset'] = "Test"
-
-df_final.loc[TrainIndices,'TrainDataset'] = 1
-df_final.loc[TestIndices,'TrainDataset'] = 0
-
-#df_final["NewWt"]=1
+    df_pteta_rwt(Train,cat,ptw=Conf.ptbins,etaw=Conf.etabins,pt=Conf.ptwtvar,eta=Conf.etawtvar,
+                 SumWeightCol='xsecwt',NewWeightCol=weight, target=1,cand=0)
+    
+if Conf.Reweighing=='ptetaSig':
+    df_pteta_rwt(Test,cat,ptw=Conf.ptbins,etaw=Conf.etabins,pt=Conf.ptwtvar,eta=Conf.etawtvar,
+                 SumWeightCol='xsecwt',NewWeightCol=weight, target=0,cand=1)
+if Conf.Reweighing=='ptetaBkg':
+    df_pteta_rwt(Test,cat,ptw=Conf.ptbins,etaw=Conf.etabins,pt=Conf.ptwtvar,eta=Conf.etawtvar,
+                 SumWeightCol='xsecwt',NewWeightCol=weight, target=1,cand=0)
 
 
-# In[13]:
-
+df_final=pd.concat([Train,Test],ignore_index=True, sort=False)
 
 import seaborn as sns
 fig, axes = plt.subplots(1, 1, figsize=(10, 5))
@@ -197,14 +215,15 @@ plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
 # In[14]:
 
 
-def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
-    X_train = df_final.loc[TrainIndices,features]
-    Y_train = df_final.loc[TrainIndices,cat]
-    Wt_train = df_final.loc[TrainIndices,weight]
+def PrepDataset(Train,Test,features,cat,weight):
+    X_train = Train[features]
+    Y_train = Train[cat]
+    Wt_train = Train[weight]
+
+    X_test = Test[features]
+    Y_test = Test[cat]
+    Wt_test = Test[weight]
     
-    X_test = df_final.loc[TestIndices,features]
-    Y_test = df_final.loc[TestIndices,cat]
-    Wt_test = df_final.loc[TestIndices,weight]
     return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
@@ -219,7 +238,7 @@ for MVA in Conf.MVAs:
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Train",MVA=MVA,OutputDirName=Conf.OutputDirName)
         MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
         MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
-        X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
+        X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(Train,Test,Conf.features[MVA],cat,weight)
         prGreen(MVA+" Applying "+Conf.Scaler[MVA])
         exec("from sklearn.preprocessing import "+Conf.Scaler[MVA])
         exec("sc = "+Conf.Scaler[MVA]+"()")

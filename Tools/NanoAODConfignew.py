@@ -11,23 +11,14 @@ from tensorflow.keras.layers import Dropout
 ####Start here
 #####################################################################
 OutputDirName = 'Output' #All plots, models, config file will be stored here
-
-Debug=False # If True, only a very small subset of events/objects are used for either Signal or background
+Debug=True # If True, only a 10% of events/objects are used for either Signal or background
 
 branches=["Electron_*"]
-
-##### For NanoAOD and other un-flattened trees, you can switch on this option to flatten branches with variable lenght for each event (Event level -> Object level)
-flatten=True
-
-##### If True, this will save the datafrme as a csv and the next time you run the same training will different parameters, it will be much faster
-SaveDataFrameCSV=False
-##### If branches and files are same a "previous" (not this one) training and SaveDataFrameCSV was True, you can switch on loadfromsaved and it will be much quicker to run the this time
-loadfromsaved=True
 
 #Files, Cuts and XsecWts should have the same number of elements
 SigFiles = [
     #File 1
-    'DYJetsToLL_M-50_v7_ElePromptGenMatched.root']
+    '/scratch/SampleNanoAOD/DYJetsToLL_M-50_v7_ElePromptGenMatched.root']
     #File 2
     #'/eos/user/a/akapoor/SWAN_projects/TauGun_Pt-15to500_14TeV_Run3Summer19MiniAOD-2021Scenario_106X_mcRun3_2021_NewCode2021.root'] #Add as many files you like
 
@@ -48,7 +39,7 @@ SigXsecWts=[
 #Files, Cuts and XsecWts should have the same number of elements
 BkgFiles = [
     #File 1
-    'DYJetsToLL_M-50_v7_ElePromptGenMatched.root'] #Add as many files you like 
+    '/scratch/SampleNanoAOD/DYJetsToLL_M-50_v7_ElePromptGenMatched.root'] #Add as many files you like 
 
 #Cuts to select appropriate background
 BkgCuts= [
@@ -65,39 +56,36 @@ BkgXsecWts=[
 testsize=0.2 #(0.2 means 20%)
 
 
-def modfiydf(df):#Do not remove this function, even if empty
+def modfiydf(df):
     #Can be used to add new branches
     df["Electron_SCeta"]=df["Electron_deltaEtaSC"] + df["Electron_eta"]
 
 #Common cuts for both signal and background (Would generally correspond to the training region)
-CommonCut = "(Electron_pt>10) & (abs(Electron_eta)<1.566)" 
+CommonCut = "(Electron_pt>10)" 
 #This is barrel and pt>10 GeV
 #endcap would be
-#(ele_pt > 10) & (abs(scl_eta)>1.566)
+#(ele_pt > 10) & (abs(scl_eta)<1.566)
 
 Tree = "Events" #Location/Name of tree inside Root files
 
 ################################
 
 #MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
-MVAs = ["XGB_1","DNN_1"] 
+MVAs = ["XGB_1"] 
 #XGB and DNN are keywords so names can be XGB_new, DNN_old etc. But keep XGB and DNN in the names (That is how the framework identifies which algo to run
 
-MVAColors = ["green","blue"] #Plot colors for MVAs
+MVAColors = ["green"] #Plot colors for MVAs
 
-MVALabels = {"XGB_1" : "XGB masscut",
-             "DNN_1" : "DNN masscut"
+MVALabels = {"XGB_1" : "XGB masscut"
             } #These labels can be anything (this is how you will identify them on plot legends)
 
 ################################
 features = {
-            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_SCeta"],
-            "DNN_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_SCeta"]
+            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_SCeta"]
            } #Input features to MVA #Should be in your ntuples
 
 feature_bins = {
-                "XGB_1":[100, 100, 100, 100],
-                "DNN_1":[100, 100, 100, 100]
+                "XGB_1":[100, 100, 100, 100]
                } #Binning used only for plotting features (should be in the same order as features), does not affect training
 #template 
 #np.linspace(lower boundary, upper boundary, totalbins+1)
@@ -115,8 +103,7 @@ XGBGridSearch= {
                 "XGB_1": {'learning_rate':[0.1, 0.01, 0.001]}
                }
 
-Scaler = {"XGB_1":"MinMaxScaler",
-          "DNN_1":"MinMaxScaler" }
+Scaler = {"XGB_1":"MinMaxScaler"}
 #
 #To choose just one value for a parameter you can just specify value but in a list 
 #Like "XGB_1":{'gamma':[0.5],'learning_rate':[0.1, 0.01]} 
@@ -134,15 +121,6 @@ Scaler = {"XGB_1":"MinMaxScaler",
 #                'max_depth': [3, 4, 5]}
 #Just rememeber the larger the grid the more time optimization takes
 
-#Example for DNN_1
-modelDNN_DNN_1=Sequential()
-modelDNN_DNN_1.add(Dense(2*len(features["DNN_1"]), kernel_initializer='glorot_normal', activation='relu', input_dim=len(features["DNN_1"])))
-modelDNN_DNN_1.add(Dense(len(features["DNN_1"]), kernel_initializer='glorot_normal', activation='relu'))
-modelDNN_DNN_1.add(Dropout(0.1))
-modelDNN_DNN_1.add(Dense(1, kernel_initializer='glorot_uniform', activation='sigmoid'))
-DNNDict={
-         "DNN_1":{'epochs':10, 'batchsize':100, 'lr':0.001, 'model':modelDNN_DNN_1}
-        }
 
 
 #####################################################################
@@ -150,7 +128,7 @@ DNNDict={
 SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 
 ######### Reweighting scheme #Feature not available but planned
-Reweighing = 'ptetaSig'
+Reweighing = 'Nothing'
 ptbins = [10,30,40,50,100,5000] 
 etabins = [-1.6,-1.0,1.0,1.2,1.6]
 ptwtvar='Electron_pt'
