@@ -51,7 +51,10 @@ np.random.seed(Conf.RandomState)
 
 import os
 os.system("")
-import uproot
+try:
+  import uproot3 as uproot
+except ImportError:
+  import uproot
 import glob
 import pandas as pd
 import numpy as np
