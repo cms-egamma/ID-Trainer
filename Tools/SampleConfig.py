@@ -22,7 +22,7 @@ flatten=True
 ##### If True, this will save the datafrme as a csv and the next time you run the same training will different parameters, it will be much faster
 SaveDataFrameCSV=False
 ##### If branches and files are same a "previous" (not this one) training and SaveDataFrameCSV was True, you can switch on loadfromsaved and it will be much quicker to run the this time
-loadfromsaved=True
+loadfromsaved=False
 
 #Files, Cuts and XsecWts should have the same number of elements
 SigFiles = [
