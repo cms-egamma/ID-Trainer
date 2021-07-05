@@ -62,7 +62,7 @@ def pngtopdf(ListPattern=[],Save="mydoc.pdf"):
         L[i]=rgb
     L[0].save(Save, "PDF" ,resolution=100.0, save_all=True, append_images=L[1:])
 
-def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat="EleType",label=["Background","Signal"],weight="NewWt"):
+def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat='Category',label=["Background","Signal"],weight="NewWt"):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making"+Set+" dataset feature plots")
     for m in range(len(features)):
@@ -75,7 +75,7 @@ def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",Outp
         axes[m-1].set_title(features[m-1]+" ("+Set+" Dataset)")
     plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots_"+Set+".pdf")
 
-def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="EleType",label=["Background","Signal"],weight="NewWt"):
+def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="Category",label=["Background","Signal"],weight="NewWt"):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making Combined"+" dataset feature plots")
     for m in range(len(features)):
