@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Dropout
 #####################################################################
 OutputDirName = 'Output' #All plots, models, config file will be stored here
 
-Debug=False # If True, only a very small subset of events/objects are used for either Signal or background
+Debug=True # If True, only a very small subset of events/objects are used for either Signal or background
 
 branches=["Electron_*"]
 
@@ -24,56 +24,48 @@ SaveDataFrameCSV=True
 ##### If branches and files are same a "previous" (not this one) training and SaveDataFrameCSV was True, you can switch on loadfromsaved and it will be much quicker to run the this time
 loadfromsaved=False
 
-#Files, Cuts and XsecWts should have the same number of elements
-SigFiles = [
-    #File 1
-    'DYJetsToLL_M-50_v7_ElePromptGenMatched.root']
-    #File 2
-    #'/eos/user/a/akapoor/SWAN_projects/TauGun_Pt-15to500_14TeV_Run3Summer19MiniAOD-2021Scenario_106X_mcRun3_2021_NewCode2021.root'] #Add as many files you like
-
-#Cuts to select appropriate signal
-SigCuts= [
-    #For File 1
-    "(Electron_promptgenmatched == 1)"]
-    #For File 2
-    #"(matchedToGenEle == 1)"] #Cuts same as number of files (Kept like this because it maybe different for different files)
-
-#Any extra xsec weight : Useful when stitching samples for either signal or background : '1' means no weight
-SigXsecWts=[
-    #For File 1
-    1]
-    #For File 2
-    #1] #Weights same as number of files (Kept like this because it maybe different for different files)
-
-#Files, Cuts and XsecWts should have the same number of elements
-BkgFiles = [
-    #File 1
-    'DYJetsToLL_M-50_v7_ElePromptGenMatched.root'] #Add as many files you like 
-
-#Cuts to select appropriate background
-BkgCuts= [
-    #For File 1 
-    "(Electron_promptgenmatched == 0)"]#Cuts same as number of files (Kept like this because it maybe different for different files)
-
-#Any extra xsec weight : Useful when stitching samples for either signal or background : '1' means no weight
-BkgXsecWts=[
-    #For File 1 
-    2] #Weights same as number of files (Kept like this because it maybe different for different files) 
-
-#####################################################################
-
-testsize=0.2 #(0.2 means 20%)
-
-
-def modfiydf(df):#Do not remove this function, even if empty
-    #Can be used to add new branches
-    df["Electron_SCeta"]=df["Electron_deltaEtaSC"] + df["Electron_eta"]
-
 #Common cuts for both signal and background (Would generally correspond to the training region)
 CommonCut = "(Electron_pt>10) & (abs(Electron_eta)<1.566)" 
 #This is barrel and pt>10 GeV
 #endcap would be
 #(ele_pt > 10) & (abs(scl_eta)>1.566)
+
+Classes = ['Background','Signal'] #Which classes are you going to use (Do not modify this if you don't have a reason to)
+## YES MULTICLASS IN COMING SOON
+
+#dictionary of processes
+processes=[
+    {
+        'Class':'Background',
+        'path':'DYJetsToLL_M-50_v7_ElePromptGenMatched.root', #path of root file
+        'xsecwt': 1, #xsec wt if any, if none then it can be 1
+        'CommonSelection':CommonCut, #Common selection for all classes
+        'selection':"(Electron_promptgenmatched == 0)", #selection for background
+    },
+    
+    {
+        'Class':'Signal',
+        'path':'DYJetsToLL_M-50_v7_ElePromptGenMatched.root', #path of root file
+        'xsecwt': 1, #xsec wt if any, if none then it can be 1
+        'CommonSelection':CommonCut, #Common selection for all classes
+        'selection':"(Electron_promptgenmatched == 1)", #selection for signal
+        }
+]
+
+#####################################################################
+
+testsize=0.2 #(0.2 means 20%)
+
+def modfiydf(df):#Do not remove this function, even if empty
+    #Can be used to add new branches (The pandas dataframe style)
+    
+    ############ Write you modifications inside this block #######
+    #example:
+    #df["Electron_SCeta"]=df["Electron_deltaEtaSC"] + df["Electron_eta"]
+    
+    ####################################################
+    
+    return 0
 
 Tree = "Events" #Location/Name of tree inside Root files
 
@@ -91,13 +83,13 @@ MVALabels = {"XGB_1" : "XGB masscut",
 
 ################################
 features = {
-            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_SCeta"],
-            "DNN_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_SCeta"]
+            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"],
+            "DNN_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"]
            } #Input features to MVA #Should be in your ntuples
 
 feature_bins = {
-                "XGB_1":[100, 100, 100, 100],
-                "DNN_1":[100, 100, 100, 100]
+                "XGB_1":[100, 100, 100],
+                "DNN_1":[100, 100, 100]
                } #Binning used only for plotting features (should be in the same order as features), does not affect training
 #template 
 #np.linspace(lower boundary, upper boundary, totalbins+1)
@@ -164,7 +156,6 @@ ptetaBkg : To Background pt-eta spectrum
 '''
 
 #####Optional Features
-#SaveDataFrameCSV=False #True will save the final dataframe with all features and MAV predictions
 #RandomState=42 # Choose the same number everytime for reproducibility
 #MVAlogplot=False #If true, MVA outputs are plotted in log scale
 #Multicore=True #If True all CPU cores available are used XGB 

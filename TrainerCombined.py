@@ -23,8 +23,8 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    exec("import Tools.NanoAODConfig as Conf")
-    TrainConfig="Tools/NanoAODConfig"
+    exec("import Configs.SampleConfig as Conf")
+    TrainConfig="Configs/SampleConfig"
 else:
     TrainConfig=sys.argv[1]
     print("Importing settings from "+ TrainConfig.replace("/", "."))
@@ -99,18 +99,23 @@ os.system("mkdir -p " + Conf.OutputDirName)
 os.system("mkdir -p " + Conf.OutputDirName+"/CodeANDConfig")
 os.system("mkdir -p " + Conf.OutputDirName+"/Thresholds")
 os.system("cp "+TrainConfig+".py ./"+ Conf.OutputDirName+"/CodeANDConfig/")
-os.system("cp Trainer.py ./"+ Conf.OutputDirName+"/CodeANDConfig/")    
+os.system("cp TrainerCombined.py ./"+ Conf.OutputDirName+"/CodeANDConfig/")    
 
 
 # In[8]:
 
 
-cat='EleType'
-weight="NewWt"
-label=["Background","Signal"]
+cat='Category'
+weight='NewWt'
 
 
 # In[9]:
+
+
+label=Conf.Classes
+
+
+# In[10]:
 
 
 #Works in uproot3
@@ -118,17 +123,8 @@ prGreen("Making data frames")
 Sigdf=pd.DataFrame()
 Bkgdf=pd.DataFrame()
 
-processes=[]
 
-for SigFile,SigXsecWt,SigCut in zip(Conf.SigFiles,Conf.SigXsecWts,Conf.SigCuts):
-    processes.append({'path':SigFile,'xsecwt': SigXsecWt, 'selection':SigCut, 
-                      'EleType':1, 'CommonSelection':Conf.CommonCut,'sample':'Signal'})
-for BkgFile,BkgXsecWt,BkgCut in zip(Conf.BkgFiles,Conf.BkgXsecWts,Conf.BkgCuts):
-    processes.append({'path':BkgFile,'xsecwt': BkgXsecWt, 'selection':BkgCut, 
-                      'EleType':0, 'CommonSelection':Conf.CommonCut,'sample':'Background'})
-
-
-# In[10]:
+# In[11]:
 
 
 import Tools.readData as readData
@@ -136,27 +132,28 @@ import sys
 import os
 
 
-# In[11]:
+# In[12]:
 
 
 import pandas as pd
 if Conf.loadfromsaved:
     df_final=pd.read_parquet(Conf.OutputDirName+'/df.parquet.gzip')
 else:
-    df_final=readData.daskframe_from_rootfiles(processes,Conf.Tree,branches=Conf.branches,flatten=Conf.flatten,debug=Conf.Debug)
+    df_final=readData.daskframe_from_rootfiles(Conf.processes,Conf.Tree,branches=Conf.branches,flatten=Conf.flatten,debug=Conf.Debug)
     if hasattr(Conf, 'SaveDataFrameCSV'): 
         if Conf.SaveDataFrameCSV:
             prGreen("Saving DataFrame : It can take sometime")
             df_final.to_parquet(Conf.OutputDirName+'/df.parquet.gzip',compression='gzip')
 
 
-# In[ ]:
+# In[13]:
 
 
+fn = lambda row: Conf.Classes.index(row.Class)
+df_final[cat] = df_final.apply(fn, axis=1)
 
 
-
-# In[12]:
+# In[14]:
 
 
 #df_final.head()
@@ -164,15 +161,15 @@ Conf.modfiydf(df_final)
 #Conf.modfiydf(Bkgdf)
 
 
-# In[13]:
+# In[15]:
 
 
 #SigIndices=df_final.query("sample=='Signal'").index.values.tolist()
 #BkgIndices=df_final.query("sample=='Background'").index.values.tolist()
 
 index = df_final.index
-Sigcondition = df_final["sample"] == "Signal"
-Bkgcondition = df_final["sample"] == "Background"
+Sigcondition = df_final["Class"] == "Signal"
+Bkgcondition = df_final["Class"] == "Background"
 
 SigIndices = index[Sigcondition].values.tolist()
 BkgIndices = index[Bkgcondition].values.tolist()
@@ -182,14 +179,14 @@ SigTrainIndices, SigTestIndices = train_test_split(SigIndices, test_size=Conf.te
 BkgTrainIndices, BkgTestIndices = train_test_split(BkgIndices, test_size=Conf.testsize, random_state=Conf.RandomState, shuffle=True)
 
 
-# In[14]:
+# In[16]:
 
 
 TrainIndices=SigTrainIndices+BkgTrainIndices
 TestIndices=SigTestIndices+BkgTestIndices
 
 
-# In[15]:
+# In[17]:
 
 
 df_final.loc[TrainIndices,'Dataset'] = "Train"
@@ -199,12 +196,12 @@ df_final.loc[TrainIndices,'TrainDataset'] = 1
 df_final.loc[TestIndices,'TrainDataset'] = 0
 
 
-# In[16]:
+# In[18]:
 
 
 import seaborn as sns
 fig, axes = plt.subplots(1, 1, figsize=(10, 5))
-kplot=sns.countplot(x="sample", data=df_final, ax=axes,hue='Dataset',palette=['#432371',"#FAAE7B"])
+kplot=sns.countplot(x="Class", data=df_final, ax=axes,hue='Dataset',palette=['#432371',"#FAAE7B"])
 for p in kplot.patches:
     kplot.annotate(format(p.get_height(), '.2f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'center', xytext = (0, 5), textcoords = 'offset points')
 axes.set_title("Number of samples")
@@ -213,7 +210,7 @@ plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.pdf")
 plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
 
 
-# In[17]:
+# In[19]:
 
 
 def df_pteta_rwt(Mdf,
@@ -266,7 +263,7 @@ def df_pteta_rwt(Mdf,
     
 
 
-# In[18]:
+# In[20]:
 
 
 df_final[weight]=1
@@ -287,7 +284,7 @@ if Conf.Reweighing=='ptetaBkg':
                                                   SumWeightCol='xsecwt',NewWeightCol=weight, target=1,cand=0)
 
 
-# In[19]:
+# In[21]:
 
 
 #df_final["ele_pt_bin"]=-9
@@ -300,7 +297,7 @@ if Conf.Reweighing=='ptetaSig' or Conf.Reweighing=='ptetaBkg':
     
 
 
-# In[25]:
+# In[22]:
 
 
 import numpy as np
@@ -309,7 +306,7 @@ import seaborn as sns
 
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("EleType"):
+for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby(cat):
     group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=label[i], ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=4)
     ax[0].set_title("$p_T$ before reweighting")
     ax[0].legend()
@@ -319,7 +316,7 @@ for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("EleType"):
 fig.savefig(Conf.OutputDirName+"/pT_rwt.pdf")
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("EleType"):
+for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby(cat):
     group_df[Conf.etawtvar].hist(histtype='step', 
                                  bins=Conf.etabins,
                                  #[i for i in range(len(Conf.etabins)-1)], 
@@ -347,7 +344,7 @@ fig.savefig(Conf.OutputDirName+"/eta_rwt.pdf")
 
 
 
-# In[26]:
+# In[23]:
 
 
 '''
@@ -375,7 +372,7 @@ fig.savefig(Conf.OutputDirName+"/eta_pt_rwt.pdf")
 
 
 
-# In[27]:
+# In[24]:
 
 
 def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
@@ -389,14 +386,14 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
-# In[28]:
+# In[25]:
 
 
 import pickle
 import multiprocessing
 
 
-# In[ ]:
+# In[26]:
 
 
 for MVA in Conf.MVAs:
@@ -462,7 +459,7 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.png")
 
 
-# In[ ]:
+# In[27]:
 
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -513,14 +510,14 @@ for MVA in Conf.MVAs:
         plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.png")
 
 
-# In[ ]:
+# In[28]:
 
 
 if 'Genetic' in Conf.MVAs:
     prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
 
 
-# In[ ]:
+# In[29]:
 
 
 ##PlotFinalROC
@@ -545,7 +542,7 @@ plt.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
 plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[ ]:
+# In[30]:
 
 
 PredMVAs=[]
@@ -557,14 +554,14 @@ for i,SigEffWPi in enumerate(SigEffWPs):
 
 if len(Conf.MVAs)>0:
     prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
-    mydf=df_final.query("TrainDataset==1 & EleType==1")[PredMVAs].quantile(SigEffWPs)
+    mydf=df_final.query("TrainDataset==1 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
     mydf.insert(0, "WPs", Conf.SigEffWPs, True)
     mydf.set_index("WPs",inplace=True)
     prGreen(mydf)
     mydf.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.html")
     mydf.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.csv")
     prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
-    mydf2=df_final.query("TrainDataset==0 & EleType==1")[PredMVAs].quantile(SigEffWPs)
+    mydf2=df_final.query("TrainDataset==0 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
     mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
     mydf2.set_index("WPs",inplace=True)
     prGreen(mydf2)
@@ -572,7 +569,7 @@ if len(Conf.MVAs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[ ]:
+# In[31]:
 
 
 pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*ROC*png',Conf.OutputDirName+'/*ROC*png'],Save=Conf.OutputDirName+"/mydocROC.pdf")
