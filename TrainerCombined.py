@@ -93,7 +93,7 @@ if Conf.Debug==True:
     
 if len(Conf.MVAs)>0:
     for MVAd in Conf.MVAs:
-        os.system("mkdir -p " + Conf.OutputDirName+"/"+MVAd)
+        os.system("mkdir -p " + Conf.OutputDirName+"/"+MVAd["MVAtype"])
 prGreen("Making output directory")
 os.system("mkdir -p " + Conf.OutputDirName)
 os.system("mkdir -p " + Conf.OutputDirName+"/CodeANDConfig")
@@ -397,31 +397,30 @@ import multiprocessing
 
 
 for MVA in Conf.MVAs:
-    
-    if 'XGB' in MVA:
-        MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Train",MVA=MVA,OutputDirName=Conf.OutputDirName)
-        MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
-        MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
-        X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
-        prGreen(MVA+" Applying "+Conf.Scaler[MVA])
-        exec("from sklearn.preprocessing import "+Conf.Scaler[MVA])
-        exec("sc = "+Conf.Scaler[MVA]+"()")
+    if 'XGB' in MVA["MVAtype"]:
+        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName)
+        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName)
+        MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName)
+        X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,MVA["features"],cat,weight)
+        prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
+        exec("from sklearn.preprocessing import "+MVA["Scaler"])
+        exec("sc = "+MVA["Scaler"]+"()")
         X_train = sc.fit_transform(X_train)
         X_test = sc.transform(X_test)
-        prGreen(MVA+" Training starting")
+        prGreen(MVA["MVAtype"]+" Training starting")
         import xgboost as xgb
         from sklearn.model_selection import cross_val_score, GridSearchCV
         xgb_model = xgb.XGBClassifier(objective="binary:logistic", random_state=Conf.RandomState)
         #xgb_model.set_config(verbosity=2)
         prGreen("Performing XGB grid search")
         if Conf.Multicore:
-            cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
+            cv = GridSearchCV(xgb_model, MVA["XGBGridSearch"],
                               scoring='neg_log_loss',cv=3,verbose=1,n_jobs=2)#multiprocessing.cpu_count())
         else:
-            cv = GridSearchCV(xgb_model, Conf.XGBGridSearch[MVA],
+            cv = GridSearchCV(xgb_model, MVA["XGBGridSearch"],
                               scoring='neg_log_loss',cv=3,verbose=1)
         search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=1)
-        pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"modelXGB.pkl", "wb"))
+        pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelXGB.pkl", "wb"))
         #modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
         prGreen("Expected neg log loss of XGB model = "+str((np.round(np.average(search.best_score_),3))*100)+'%')
         #prGreen("Expected accuracy of XGB model = "+str((np.average(search.best_score_))*100)+'%')
@@ -430,33 +429,33 @@ for MVA in Conf.MVAs:
         #json.dumps(search.best_params_)
         prGreen(str(search.best_params_))
     
-        df_final.loc[TrainIndices,MVA+"_pred"]=cv.predict_proba(X_train)[:,1]
-        df_final.loc[TestIndices,MVA+"_pred"]=cv.predict_proba(X_test)[:,1]
+        df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=cv.predict_proba(X_train)[:,1]
+        df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=cv.predict_proba(X_test)[:,1]
     
         prGreen("Plotting output response for XGB")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
-        plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBMVA.pdf")
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBMVA.png")
+        plot_mva(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
+        plot_mva(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBMVA.pdf")
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBMVA.png")
     
         prGreen("Plotting ROC for XGB")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_roc_curve(df_final.query('TrainDataset==1'),MVA+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='-', label=Conf.MVALabels[MVA]+' Training',cat=cat,Wt=weight)
-        plot_roc_curve(df_final.query('TrainDataset==0'),MVA+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='--', label=Conf.MVALabels[MVA]+' Testing',cat=cat,Wt=weight)
+        plot_roc_curve(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='-', label=MVA["Label"]+' Training',cat=cat,Wt=weight)
+        plot_roc_curve(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='--', label=MVA["Label"]+' Testing',cat=cat,Wt=weight)
         if len(Conf.OverlayWP)>0:
             for color,OverlayWpi in zip(Conf.OverlayWPColors,Conf.OverlayWP):
                 plot_single_roc_point(df_final.query('TrainDataset==0'), var=OverlayWpi, ax=axes, color=color, marker='o', markersize=6, label=OverlayWpi+" Test dataset", cat=cat,Wt=weight)
         axes.set_ylabel("Background efficiency")
         axes.set_xlabel("Signal efficiency")
-        axes.set_title("XGB")
+        axes.set_title(MVA["MVAtype"])
         axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
-            horizontalalignment='center',
-            verticalalignment='center',
-            rotation='vertical',
-            transform=axes.transAxes)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.pdf")
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"XGBROC.png")
+                  horizontalalignment='center',
+                  verticalalignment='center',
+                  rotation='vertical',
+                  transform=axes.transAxes)
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBROC.pdf")
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBROC.png")
 
 
 # In[27]:
@@ -464,57 +463,58 @@ for MVA in Conf.MVAs:
 
 from tensorflow.keras.callbacks import EarlyStopping
 for MVA in Conf.MVAs:
-    if 'DNN' in MVA:
-        MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Train",MVA=MVA,OutputDirName=Conf.OutputDirName)
-        MakeFeaturePlots(df_final,Conf.features[MVA],Conf.feature_bins[MVA],Set="Test",MVA=MVA,OutputDirName=Conf.OutputDirName)
-        MakeFeaturePlotsComb(df_final,Conf.features[MVA],Conf.feature_bins[MVA],MVA=MVA,OutputDirName=Conf.OutputDirName)
-        X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,Conf.features[MVA],cat,weight)
-        prGreen(MVA+" Applying "+Conf.Scaler[MVA])
-        exec("from sklearn.preprocessing import "+Conf.Scaler[MVA])
-        exec("sc = "+Conf.Scaler[MVA]+"()")
+    if 'DNN' in MVA["MVAtype"]:
+        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName)
+        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName)
+        MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName)
+        X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,MVA["features"],cat,weight)
+        prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
+        exec("from sklearn.preprocessing import "+MVA["Scaler"])
+        exec("sc = "+MVA["Scaler"]+"()")
         X_train = sc.fit_transform(X_train)
         X_test = sc.transform(X_test)
         prGreen("DNN fitting running")
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
-        modelDNN=Conf.DNNDict[MVA]['model']
-        modelDNN.compile(loss='binary_crossentropy', optimizer=Adam(lr=Conf.DNNDict[MVA]['lr']), metrics=['accuracy',])
-        train_history = modelDNN.fit(X_train,Y_train,epochs=Conf.DNNDict[MVA]['epochs'],batch_size=Conf.DNNDict[MVA]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
+        modelDNN=MVA["DNNDict"]['model']
+        modelDNN.compile(loss='binary_crossentropy', optimizer=Adam(lr=MVA["DNNDict"]['lr']), metrics=['accuracy',])
+        train_history = modelDNN.fit(X_train,Y_train,epochs=MVA["DNNDict"]['epochs'],batch_size=MVA["DNNDict"]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
-        modelDNN.save(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"modelDNN.h5")
-        df_final.loc[TrainIndices,MVA+"_pred"]=modelDNN.predict(X_train)
-        df_final.loc[TestIndices,MVA+"_pred"]=modelDNN.predict(X_test)
+        modelDNN.save(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.h5")
+        df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=modelDNN.predict(X_train)
+        df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=modelDNN.predict(X_test)
     
         prGreen("Plotting output response for DNN")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_mva(df_final.query('TrainDataset==1'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
-        plot_mva(df_final.query('TrainDataset==0'),MVA+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNMVA.pdf")
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNMVA.png")
+        plot_mva(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot)
+        plot_mva(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred",bins=50,cat=cat,Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot)
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNMVA.pdf")
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNMVA.png")
     
         prGreen("Plotting ROC for DNN")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_roc_curve(df_final.query('TrainDataset==1'),MVA+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='-', label=Conf.MVALabels[MVA]+' Training',cat=cat,Wt=weight)
-        plot_roc_curve(df_final.query('TrainDataset==0'),MVA+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='--', label=Conf.MVALabels[MVA]+' Testing',cat=cat,Wt=weight)
+        plot_roc_curve(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='-', label=MVA["Label"]+' Training',cat=cat,Wt=weight)
+        plot_roc_curve(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='--', label=MVA["Label"]+' Testing',cat=cat,Wt=weight)
         if len(Conf.OverlayWP)>0:
             for color,OverlayWpi in zip(Conf.OverlayWPColors,Conf.OverlayWP):
                 plot_single_roc_point(df_final.query('TrainDataset==0'), var=OverlayWpi, ax=axes, color=color, marker='o', markersize=6, label=OverlayWpi+" Test dataset", cat=cat,Wt=weight)
         axes.set_ylabel("Background efficiency")
         axes.set_xlabel("Signal efficiency")
-        axes.set_title("DNN")
+        axes.set_title(MVA["MVAtype"])
         axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
             horizontalalignment='center',
             verticalalignment='center',
             rotation='vertical',
             transform=axes.transAxes)
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.pdf")
-        plt.savefig(Conf.OutputDirName+"/"+MVA+"/"+MVA+"_"+"DNNROC.png")
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNROC.pdf")
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNROC.png")
 
 
 # In[28]:
 
 
-if 'Genetic' in Conf.MVAs:
-    prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
+for MVA in Conf.MVAs:
+    if 'Genetic' in MVA["MVAtype"]:
+        prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
 
 
 # In[29]:
@@ -527,9 +527,9 @@ if len(Conf.OverlayWP)>0:
     for color,OverlayWpi in zip(Conf.OverlayWPColors,Conf.OverlayWP):
         plot_single_roc_point(df_final.query('TrainDataset==0'), var=OverlayWpi, ax=axes, color=color, marker='o', markersize=8, label=OverlayWpi+" Test dataset", cat=cat,Wt=weight)
 if len(Conf.MVAs)>0:
-    for color,MVAi in zip(Conf.MVAColors,Conf.MVAs):
-        plot_roc_curve(df_final.query('TrainDataset==0'),MVAi+"_pred", tpr_threshold=0.7, ax=axes, color=color, linestyle='--', label=Conf.MVALabels[MVAi]+' Testing',cat=cat,Wt=weight)
-        plot_roc_curve(df_final.query('TrainDataset==1'),MVAi+"_pred", tpr_threshold=0.7, ax=axes, color=color, linestyle='-', label=Conf.MVALabels[MVAi]+' Training',cat=cat,Wt=weight)
+    for MVAi in Conf.MVAs:
+        plot_roc_curve(df_final.query('TrainDataset==0'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.7, ax=axes, color=MVAi["Color"], linestyle='--', label=MVAi["Label"]+' Testing',cat=cat,Wt=weight)
+        plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.7, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt=weight)
     axes.set_ylabel("Background efficiency")
     axes.set_xlabel("Signal efficiency")
     axes.set_title("Final")
@@ -547,7 +547,7 @@ plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 PredMVAs=[]
 for MVA in Conf.MVAs:
-    PredMVAs.append(MVA+'_pred')
+    PredMVAs.append(MVAi["MVAtype"]+'_pred')
 SigEffWPs=Conf.SigEffWPs[:]
 for i,SigEffWPi in enumerate(SigEffWPs):
     SigEffWPs[i]=int(SigEffWPi.replace('%', ''))/100

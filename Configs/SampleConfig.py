@@ -14,12 +14,17 @@ OutputDirName = 'Output' #All plots, models, config file will be stored here
 
 Debug=True # If True, only a very small subset of events/objects are used for either Signal or background
 
+#Branches to read
 branches=["Electron_*"]
+#Possible examples
+# ["Electron_*","matchingflag",]
+# ["Electron_pt", "Electron_deltaEtaSC", "Electron_r9","Electron_eta"]
+# You need to read branches to use them anywhere
 
-##### For NanoAOD and other un-flattened trees, you can switch on this option to flatten branches with variable lenght for each event (Event level -> Object level)
+##### For NanoAOD and other un-flattened trees, you can switch on this option to flatten branches with variable length for each event (Event level -> Object level)
 flatten=True
 
-##### If True, this will save the datafrme as a csv and the next time you run the same training with different parameters, it will be much faster
+##### If True, this will save the dataframe as a csv and the next time you run the same training with different parameters, it will be much faster
 SaveDataFrameCSV=True
 ##### If branches and files are same a "previous" (not this one) training and SaveDataFrameCSV was True, you can switch on loadfromsaved and it will be much quicker to run the this time
 loadfromsaved=False
@@ -49,9 +54,8 @@ processes=[
         'xsecwt': 1, #xsec wt if any, if none then it can be 1
         'CommonSelection':CommonCut, #Common selection for all classes
         'selection':"(Electron_promptgenmatched == 1)", #selection for signal
-        }
+    }
 ]
-
 #####################################################################
 
 testsize=0.2 #(0.2 means 20%)
@@ -69,79 +73,80 @@ def modfiydf(df):#Do not remove this function, even if empty
 
 Tree = "Events" #Location/Name of tree inside Root files
 
+################################ Don't remove (even if you are not using a DNN)
+def modelDNN1(k,number_of_features):
+    #A simple DNN to use later
+    modelDNN_DNN_1=Sequential()
+    modelDNN_DNN_1.add(Dense(k, kernel_initializer='glorot_normal', activation='relu', input_dim=number_of_features))
+    modelDNN_DNN_1.add(Dense(2*k, kernel_initializer='glorot_normal', activation='relu'))
+    modelDNN_DNN_1.add(Dense(k, kernel_initializer='glorot_normal', activation='relu'))
+    modelDNN_DNN_1.add(Dropout(0.1))
+    modelDNN_DNN_1.add(Dense(1, kernel_initializer='glorot_uniform', activation='sigmoid'))
+    return modelDNN_DNN_1
 ################################
 
 #MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
-MVAs = ["XGB_1","DNN_1"] 
-#XGB and DNN are keywords so names can be XGB_new, DNN_old etc. But keep XGB and DNN in the names (That is how the framework identifies which algo to run
-
-MVAColors = ["green","blue"] #Plot colors for MVAs
-
-MVALabels = {"XGB_1" : "XGB masscut",
-             "DNN_1" : "DNN masscut"
-            } #These labels can be anything (this is how you will identify them on plot legends)
+MVAs = [
+    #can add as many as you like: For MVAtypes XGB and DNN are keywords, so names can be XGB_new, DNN_old etc. 
+    #But keep XGB and DNN in the names (That is how the framework identifies which algo to run
+    
+    {"MVAtype":"XGB_1", 
+     "Color":"green", #Plot color for MVA
+     "Label":"XGB masscut", # label can be anything (this is how you will identify them on plot legends)
+     "features":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"], #Input features #Should be branchs in your dataframe
+     "feature_bins":[100, 100, 100], #same length as features
+     #Binning used only for plotting features (should be in the same order as features), does not affect training
+     'Scaler':"MinMaxScaler",
+     "XGBGridSearch":{'learning_rate':[0.1, 0.01, 0.001]} #All standard XGB parameters supported
+    },
+    
+    {"MVAtype":"XGB_2", 
+     "Color":"red", #Plot color for MVA
+     "Label":"XGB masscut", # label can be anything (this is how you will identify them on plot legends)
+     "features":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"], #Input features #Should be branchs in your dataframe
+     "feature_bins":[100, 100, 100], #same length as features
+     #Binning used only for plotting features (should be in the same order as features), does not affect training
+     'Scaler':"MinMaxScaler",
+     'XGBGridSearch':{'learning_rate':[0.1, 0.01, 0.001],      
+                      'min_child_weight': [1, 5, 10],
+                      'gamma': [0.5, 1, 1.5, 2, 5],
+                      'max_depth': [3]} #All standard XGB parameters supported
+     #Just rememeber the larger the grid the more time optimization takes
+    },
+     
+    {"MVAtype":"DNN_1",
+     "Color":"blue", #Plot color for MVA
+     "Label":"DNN masscut", # label can be anything (this is how you will identify them on plot legends)
+     "features":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"], #Input features #Should be branchs in your dataframe
+     "feature_bins":[100, 100, 100], #same length as features
+     #Binning used only for plotting features (should be in the same order as features), does not affect training
+     'Scaler':"MinMaxScaler",
+     "DNNDict":{'epochs':10, 'batchsize':100, 'lr':0.001, 
+                #The other parameters which are not here, can be modified in Trainer script
+                'model':modelDNN1(6,3) #3 is the length of features,
+                #check the modelDNN1 function above, you can also create your own
+               }
+    }
+]
 
 ################################
-features = {
-            "XGB_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"],
-            "DNN_1":["Electron_pt", "Electron_deltaEtaSC", "Electron_r9"]
-           } #Input features to MVA #Should be in your ntuples
 
-feature_bins = {
-                "XGB_1":[100, 100, 100],
-                "DNN_1":[100, 100, 100]
-               } #Binning used only for plotting features (should be in the same order as features), does not affect training
-#template 
-#np.linspace(lower boundary, upper boundary, totalbins+1)
-
+#binning for feature_bins can also be like this
+# np.linspace(lower boundary, upper boundary, totalbins+1)
+# example: np.linspace(0,20,21) 
+# 20 bins from 0 to 20
 #when not sure about the binning, you can just specify numbers, which will then correspond to total bins
 #You can even specify lists like [10,20,30,100]
 
-#EGamma WPs to compare to (Should be in your ntuple)
-OverlayWP=["Electron_mvaFall17V2noIso_WP90"]
+################################
+
+#Working Point Flags to compare to (Should be in your ntuple and should also be read in branches)
+OverlayWP=["Electron_mvaFall17V2noIso_WP90","Electron_mvaFall17V2noIso_WP80"]
 OverlayWPColors = ["black","purple"] #Colors on plots for WPs
-#####################################################################
-
-######### Grid Search parameters for XGB (will only be used if MVAs contains "XGB"
-XGBGridSearch= {
-                "XGB_1": {'learning_rate':[0.1, 0.01, 0.001]}
-               }
-
-Scaler = {"XGB_1":"MinMaxScaler",
-          "DNN_1":"MinMaxScaler" }
-#
-#To choose just one value for a parameter you can just specify value but in a list 
-#Like "XGB_1":{'gamma':[0.5],'learning_rate':[0.1, 0.01]} 
-#Here gamma is fixed but learning_rate will be varied
-
-#The above are just one/two paramter grids
-#All other parameters are XGB default values
-#But you give any number you want:
-#example:
-#XGBGridSearch= {'learning_rate':[0.1, 0.01, 0.001],      
-#                'min_child_weight': [1, 5, 10],
-#                'gamma': [0.5, 1, 1.5, 2, 5],
-#                'subsample': [0.6, 0.8, 1.0],
-#                'colsample_bytree': [0.6, 0.8, 1.0],
-#                'max_depth': [3, 4, 5]}
-#Just rememeber the larger the grid the more time optimization takes
-
-#Example for DNN_1
-modelDNN_DNN_1=Sequential()
-modelDNN_DNN_1.add(Dense(2*len(features["DNN_1"]), kernel_initializer='glorot_normal', activation='relu', input_dim=len(features["DNN_1"])))
-modelDNN_DNN_1.add(Dense(len(features["DNN_1"]), kernel_initializer='glorot_normal', activation='relu'))
-modelDNN_DNN_1.add(Dropout(0.1))
-modelDNN_DNN_1.add(Dense(1, kernel_initializer='glorot_uniform', activation='sigmoid'))
-DNNDict={
-         "DNN_1":{'epochs':10, 'batchsize':100, 'lr':0.001, 'model':modelDNN_DNN_1}
-        }
-
-
-#####################################################################
 
 SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 
-######### Reweighting scheme #Feature not available but planned
+######### Reweighting scheme
 Reweighing = 'ptetaSig'
 ptbins = [10,30,40,50,100,5000] 
 etabins = [-1.6,-1.0,0.0,1.0,1.6]
@@ -154,6 +159,8 @@ Nothing : No reweighting
 ptetaSig : To Signal pt-eta spectrum 
 ptetaBkg : To Background pt-eta spectrum
 '''
+######### 
+
 
 #####Optional Features
 #RandomState=42 # Choose the same number everytime for reproducibility
