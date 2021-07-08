@@ -4,19 +4,15 @@ import matplotlib.pyplot as plt
 
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
     
-def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed', alpha=0.5, sample='',cat="Matchlabel",Wt="Wt"):
+def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed', alpha=0.5, sample='',cat="Matchlabel",Wt="Wt",label=[""]):
     histtype="bar" 
     if sample is 'test':
         histtype="step"      
     if ax is None:
         ax = plt.gca()
     for name, group in df.groupby(cat):
-        if name == 0:
-            label="background"
-        else:
-            label="signal"
         group[column].hist(bins=bins, histtype=histtype, alpha=alpha,
-                           label=label+' '+sample, ax=ax, density=True, ls=ls, weights =group[Wt],linewidth=2)
+                           label=name+' '+sample, ax=ax, density=True, ls=ls, weights =group[Wt],linewidth=2)
     #ax.set_ylabel("density")
     ax.set_xlabel(column)
     ax.set_title(title)
@@ -62,12 +58,12 @@ def pngtopdf(ListPattern=[],Save="mydoc.pdf"):
         L[i]=rgb
     L[0].save(Save, "PDF" ,resolution=100.0, save_all=True, append_images=L[1:])
 
-def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat='Category',label=["Background","Signal"],weight="NewWt"):
+def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat='Category',label=[""],weight="NewWt"):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making"+Set+" dataset feature plots")
     for m in range(len(features)):
         for i,group_df in df_final[df_final['Dataset'] == Set].groupby(cat):
-            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.7,label=label[i], ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=4)
+            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.7,label=label[i], ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=2)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
         axes[m-1].legend(loc='upper right')
         axes[m-1].set_xlabel(features[m-1])
@@ -75,14 +71,14 @@ def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",Outp
         axes[m-1].set_title(features[m-1]+" ("+Set+" Dataset)")
     plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots_"+Set+".pdf")
 
-def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="Category",label=["Background","Signal"],weight="NewWt"):
+def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="Category",label=[""],weight="NewWt"):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making Combined"+" dataset feature plots")
     for m in range(len(features)):
         for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby(cat):
-            group_df[features[m-1]].hist(histtype='stepfilled', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Train", ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=4)
+            group_df[features[m-1]].hist(histtype='stepfilled', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Train", ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=2)
         for i,group_df in df_final[df_final['Dataset'] == "Test"].groupby(cat):
-            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Test", ax=axes[m-1], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=4)
+            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Test", ax=axes[m-1], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=2)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
         axes[m-1].legend(loc='upper right')
         axes[m-1].set_xlabel(features[m-1])
