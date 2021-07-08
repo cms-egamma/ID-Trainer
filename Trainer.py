@@ -461,7 +461,7 @@ for MVA in Conf.MVAs:
     
         prGreen("Plotting ROC for XGB")
         fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        if len(Conf.Classes)<2:
+        if len(Conf.Classes)<=2:
             plot_roc_curve(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='-', label=MVA["Label"]+' Training',cat=cat,Wt=weight)
             plot_roc_curve(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='--', label=MVA["Label"]+' Testing',cat=cat,Wt=weight)
             if len(Conf.OverlayWP)>0:
@@ -535,7 +535,7 @@ for MVA in Conf.MVAs:
                 axMVA.hist(y_train_pred[:, i][Y_train[:, k]==1],bins=np.linspace(0, 1, 21),label=Conf.Classes[k]+'_train',
                            weights=Wt_train[Y_train[:, k]==1]/np.sum(Wt_train[Y_train[:, k]==1]),
                            histtype='stepfilled',alpha=0.3,linewidth=2,color=Conf.ClassColors[k])
-            axMVA.set_title('MVA: Node '+str(i+1),fontsize=20)
+            axMVA.set_title(MVA["MVAtype"]+' Score: Node '+str(i+1),fontsize=10)
             axMVA.set_xlabel('Score',fontsize=10)
             axMVA.set_ylabel('Fraction of events',fontsize=10)
             axMVA.legend(loc="upper right",fontsize=10)
@@ -560,7 +560,7 @@ for MVA in Conf.MVAs:
             #ax.set_ylim([0.0, 1.05])
             ax.set_xlabel('Signal efficiency',fontsize=10)
             ax.set_ylabel('Background efficiency',fontsize=10)
-            ax.set_title('ROC: Node '+str(i+1),fontsize=20)
+            ax.set_title(MVA["MVAtype"]+' ROC: Node '+str(i+1),fontsize=10)
             ax.legend(loc="upper left",fontsize=10)
         fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNROC.pdf")
         fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNROC.png")

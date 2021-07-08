@@ -25,6 +25,7 @@ branches=["ele_*","scl_eta","rho","matchedToGenEle","Fall17isoV2wp80", "Fall17is
 
 ##### For NanoAOD and other un-flattened trees, you can switch on this option to flatten branches with variable length for each event (Event level -> Object level)
 flatten=False
+#You can't flatten branches which have different length for the same events. For example: It is not possible to flatten electron and muon branches both at the same time, since each event could have different electrons vs muons. Branches that have only one value for each event, line Nelectrons, can certainly be read along with unflattened branches.
 
 ##### If True, this will save the dataframe as a csv and the next time you run the same training with different parameters, it will be much faster
 SaveDataFrameCSV=True
@@ -56,24 +57,32 @@ WhichClassToReweightTo="Signal" #2D pt-eta spectrum of all other classs will be 
 #Reweighting scheme -------------------------------------------------------------------
 
 Classes = ['Background','Signal'] 
-ClassColors = ['#377eb8', '#ff7f00'] # To use in plots
-
+ClassColors = ['#377eb8', '#ff7f00', 'red'] # To use in plots
 #dictionary of processes
 processes=[
     {
         'Class':'Background',
-        'path':'/eos/cms/store/group/phys_egamma/staj/job_Run3_TT_Summer19_MiniAOD_v3_v2/TTToSemiLeptonic_TuneCP5_14TeV-powheg-pythia8/crab_TTToSemiLeptonic_Run3Summer19_v3_v2/210601_122020/0000/electron_ntuple_1.root', #path of root file
+        'path':'samples/QCD.root',#path of root file
         'xsecwt': 1, #xsec wt if any, if none then it can be 1
         'CommonSelection':CommonCut, #Common selection for all classes
-        'selection':"(matchedToGenEle == 0)", #selection for background
+        'selection':"(matchedToGenEle == 0)", #selection for this class
     },
+
     
     {
-        'Class':'Signal',
-        'path':'/eos/cms/store/group/phys_egamma/staj/job_Run3Summer19_MiniAOD/DYJets_incl_MLL-50_TuneCP5_14TeV-madgraphMLM-pythia8/crab_DYtoLL_M-50_TuneCP5_14TeV_Summer19_MiniAOD/210310_111212/0000/electron_ntuple.root', #path of root file
+        'Class':'Background',
+        'path':'samples/TTBar.root',#path of root file
         'xsecwt': 1, #xsec wt if any, if none then it can be 1
         'CommonSelection':CommonCut, #Common selection for all classes
-        'selection':"(matchedToGenEle == 1)", #selection for signal
+        'selection':"(matchedToGenEle == 0)", #selection for this class
+    },
+
+    {
+        'Class':'Signal',
+        'path':'samples/DY.root',#path of root file
+        'xsecwt': 1, #xsec wt if any, if none then it can be 1
+        'CommonSelection':CommonCut, #Common selection for all classes
+        'selection':"(matchedToGenEle == 1)", #selection for this class
     }
 ]
 #####################################################################
@@ -93,24 +102,13 @@ def modfiydf(df):#Do not remove this function, even if empty
 
 Tree = "ntuplizer/tree"
 
-#MVAs to use as a list, e.g : ["XGB","DNN", "Genetic"]
+#MVAs to use as a list of dictionaries
 MVAs = [
-    #can add as many as you like: For MVAtypes XGB and DNN are keywords, so names can be XGB_new, DNN_old etc. 
+    #can add as many as you like: Assuming you have enough CPU/GPU power to process all 
+    #For MVAtypes XGB and DNN are keywords, so names can be XGB_new, DNN_old etc.
     #But keep XGB and DNN in the names (That is how the framework identifies which algo to run
-
-    {"MVAtype":"XGB_1", 
-     "Color":"green", #Plot color for MVA
-     "Label":"XGB masscut", # label can be anything (this is how you will identify them on plot legends)
-     "features":["ele_oldsigmaietaieta", "ele_oldsigmaiphiiphi", "ele_oldcircularity", "ele_oldr9", "ele_scletawidth", "ele_sclphiwidth", 
-                 "ele_oldhe", "ele_kfhits", "ele_kfchi2", "ele_gsfchi2", "ele_fbrem", "ele_gsfhits", "ele_expected_inner_hits", 
-                 "ele_conversionVertexFitProbability", "ele_ep", "ele_eelepout", "ele_IoEmIop", "ele_deltaetain", "ele_deltaphiin", 
-                 "ele_deltaetaseed", "rho", "ele_hcalPFClusterIso", "ele_ecalPFClusterIso","ele_dr03TkSumPt"], #Input features #Should be branchs in your dataframe
-     "feature_bins":[100, 100, 100, 100,  np.linspace(0,0.05,1000), 100, 100, 100, 100, 100, 100, 100, 100, np.linspace(0.0,0.1,1000), 100, 100, np.linspace(-0.2,0.2,1000), 100, 100, 100, 100, np.linspace(0, 50, 100), np.linspace(0, 30, 100), np.linspace(0, 50, 100)], #same length as features
-     #Binning used only for plotting features (should be in the same order as features), does not affect training
-     'Scaler':"MinMaxScaler",
-     "XGBGridSearch":{'min_child_weight': [5], 'gamma': [0.4], 'subsample': [0.6], 'colsample_bytree': [1.0], 'max_depth': [4]} #All standard XGB parameters supported
-    },            
-
+    #Only shown DNN here. XGB examples can be found in other sample configs.
+    
     {"MVAtype":"DNN_1",
      "Color":"blue", #Plot color for MVA
      "Label":"DNN masscut", # label can be anything (this is how you will identify them on plot legends)
@@ -132,12 +130,29 @@ MVAs = [
                 'earlyStopping': EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
                 #check the modelDNN1 function above, you can also create your own
                }
-    },
+     },
 
     
-    
+    {"MVAtype":"DNN_2",
+     "Color":"blue", #Plot color for MVA
+     "Label":"DNN try2", # label can be anything (this is how you will identify them on plot legends)
+     "features":["ele_oldsigmaietaieta", "ele_oldsigmaiphiiphi", "ele_oldcircularity", "ele_oldr9", "ele_scletawidth", 
+                 "ele_sclphiwidth", "ele_oldhe", "ele_kfhits", "ele_kfchi2", "ele_gsfchi2", "ele_fbrem", "ele_gsfhits"],
+     #Input features #Should be branchs in your dataframe
+     "feature_bins":[100, 100, 100, 100,  np.linspace(0,0.05,1000), 100, 100, 100, 100, 100, 100, 100],#same length as features
+     #Binning used only for plotting features (should be in the same order as features), does not affect training
+     'Scaler':"MinMaxScaler",
+     "DNNDict":{'epochs':100, 'batchsize':100, 'lr':0.001, 
+                #The other parameters which are not here, can be modified in Trainer script
+                'model': Sequential([Dense(48, kernel_initializer='glorot_normal', activation='relu'),
+                                     Dense(48, activation="relu"),
+                                     Dropout(0.1),
+                                     Dense(len(Classes),activation="softmax")]),
+                'compile':{'loss':'binary_crossentropy','optimizer':Adam(lr=0.001), 'metrics':['accuracy']},
+                'earlyStopping': EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
+               }
+     },
 ]
-
 ################################
 
 #binning for feature_bins can also be like this
@@ -153,11 +168,12 @@ MVAs = [
 OverlayWP=['Fall17isoV2wp80', 'Fall17isoV2wp90']
 OverlayWPColors = ["black","purple"] #Colors on plots for WPs
 
+#To print thresholds of mva scores for corresponding signal efficiency
 SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
 ######### 
 
 
-#####Optional Features
+#####Optional Features (Can be commented)
 RandomState=42 # Choose the same number everytime for reproducibility
 MVAlogplot=False #If true, MVA outputs are plotted in log scale
 Multicore=True #If True all CPU cores available are used XGB 
