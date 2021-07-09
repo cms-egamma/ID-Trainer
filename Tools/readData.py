@@ -16,14 +16,24 @@ def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=
             ddd=tree.pandas.df(branches=branches,flatten=flatten).query(selection)
         #ddd["Category"]=Category
         ddd["Class"]=Class
-        ddd["xsecwt"]=xsecwt
-        print("Getting data from "+file)
+        if type(xsecwt) == type("hello"):
+            ddd["xsecwt"]=ddd[xsecwt]
+        elif type(xsecwt) == type(0.1):
+            ddd["xsecwt"]=xsecwt
+        elif type(xsecwt) == type(1):
+            ddd["xsecwt"]=xsecwt
+        else:
+            print("CAUTION: xsecwt should be a branch name or a number... Assigning the weight as 1")        
+        print(file)
         return ddd
 
     dfs=[]
     for process in processes:
-        dfs.append(delayed(get_df)(process['Class'],process['path'],process['xsecwt'],process['selection'] +" & " + process['CommonSelection'],treepath, branches))
+        dfs.append(delayed(get_df)(process['Class'],process['path'],process['xsecwt'],process['selection'],treepath, branches))
+    print("Creating dask graph!")
+    print("Testing single file first")
     daskframe = dd.from_delayed(dfs)
+    print("Finally, getting data from")
     dddf_final=daskframe.compute()
     dddf_final.reset_index(inplace = True, drop = True)
     return dddf_final

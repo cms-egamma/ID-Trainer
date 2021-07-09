@@ -36,9 +36,15 @@ else:
 # In[2]:
 
 
+if len(Conf.Classes)>2:
+    prGreen('You are running a multi-class classification: This is an experimental feature! Only ROCs, MVAs, models will saved. No thresholds available!')
+
 if not hasattr(Conf, 'MVAlogplot'): Conf.MVAlogplot=False
 if not hasattr(Conf, 'Multicore'): Conf.Multicore=False
 if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
+if not hasattr(Conf, 'flatten'): Conf.flatten=False
+if not hasattr(Conf, 'testsize'): Conf.testsize=0.2
+if not hasattr(Conf, 'Debug'): Conf.Debug=False    
 
 
 # In[3]:
@@ -157,7 +163,9 @@ df_final[cat] = df_final.apply(fn, axis=1)
 
 
 #df_final.head()
-Conf.modfiydf(df_final)
+import inspect
+if (hasattr(Conf, 'modifydf') and inspect.isfunction(Conf.modfiydf)):
+    Conf.modfiydf(df_final)
 #Conf.modfiydf(Bkgdf)
 
 
@@ -435,7 +443,7 @@ for MVA in Conf.MVAs:
         prGreen("Performing XGB grid search")
         if Conf.Multicore:
             cv = GridSearchCV(xgb_model, MVA["XGBGridSearch"],
-                              scoring='neg_log_loss',cv=3,verbose=1,n_jobs=2)#multiprocessing.cpu_count())
+                              scoring='neg_log_loss',cv=3,verbose=1,n_jobs=multiprocessing.cpu_count())#multiprocessing.cpu_count())
         else:
             cv = GridSearchCV(xgb_model, MVA["XGBGridSearch"],
                               scoring='neg_log_loss',cv=3,verbose=1)
@@ -643,7 +651,7 @@ SigEffWPs=Conf.SigEffWPs[:]
 for i,SigEffWPi in enumerate(SigEffWPs):
     SigEffWPs[i]=int(SigEffWPi.replace('%', ''))/100
 
-if len(Conf.MVAs)<=2:
+if len(Conf.Classes)<=2:
     prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
     mydf=df_final.query("TrainDataset==1 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
     mydf.insert(0, "WPs", Conf.SigEffWPs, True)
