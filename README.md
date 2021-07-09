@@ -14,7 +14,8 @@ Examples: DY vs ttbar vs QCD
 
 Salient features:
 1) Parallel reading of root files (using DASK)
-2) Adding multiple MVAs is very trivial (Subject to available computing power)
+2) Runs on flat ntuples (even NanoAODs) out of the box
+3) Adding multiple MVAs is very trivial (Subject to available computing power)
 4) Cross-section and pt-eta reweighting can be handleled together
 5) Multi-Sample training possible
 6) Multi-Class training possible
