@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 try:
     import uproot3 as uproot
 except ImportError:
@@ -29,7 +30,26 @@ def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=
 
     dfs=[]
     for process in processes:
-        dfs.append(delayed(get_df)(process['Class'],process['path'],process['xsecwt'],process['selection'],treepath, branches))
+        
+        #print(type(process['path']))
+        #print(isinstance(process['path'], tuple))
+        #print(len(process['path']))
+        if isinstance(process['path'], list):
+            if isinstance(process['xsecwt'], list):
+                for onefile,onexsecwt in zip(process['path'],process['xsecwt']):
+                    dfs.append(delayed(get_df)(process['Class'],onefile,xsecwt,process['selection'],treepath, branches))
+            else:            
+                for onefile in process['path']:
+                    dfs.append(delayed(get_df)(process['Class'],onefile,process['xsecwt'],process['selection'],treepath, branches))
+        elif isinstance(process['path'], tuple) and len(process['path'])==2:
+            listoffiles=[process['path'][0]+'/'+f for f in os.listdir(process['path'][0]) if f.endswith(process['path'][1])]
+            print(listoffiles)
+            for onefile in listoffiles:
+                dfs.append(delayed(get_df)(process['Class'],onefile,process['xsecwt'],process['selection'],treepath, branches))
+        elif isinstance(process['path'], str):
+            dfs.append(delayed(get_df)(process['Class'],process['path'],process['xsecwt'],process['selection'],treepath, branches))
+        else:
+            print("There is some problem with process path specification. Only string, list or tuple allowed")
     print("Creating dask graph!")
     print("Testing single file first")
     daskframe = dd.from_delayed(dfs)

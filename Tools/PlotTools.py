@@ -63,7 +63,7 @@ def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",Outp
     prGreen("Making"+Set+" dataset feature plots")
     for m in range(len(features)):
         for i,group_df in df_final[df_final['Dataset'] == Set].groupby(cat):
-            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.7,label=label[i], ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=2)
+            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=1,label=label[i], ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
         axes[m-1].legend(loc='upper right')
         axes[m-1].set_xlabel(features[m-1])
@@ -76,9 +76,9 @@ def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirNam
     prGreen("Making Combined"+" dataset feature plots")
     for m in range(len(features)):
         for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby(cat):
-            group_df[features[m-1]].hist(histtype='stepfilled', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Train", ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=2)
+            group_df[features[m-1]].hist(histtype='stepfilled', bins=feature_bins[m-1], alpha=0.3,label=label[i]+"_Train", ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
         for i,group_df in df_final[df_final['Dataset'] == "Test"].groupby(cat):
-            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=0.5,label=label[i]+"_Test", ax=axes[m-1], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=2)
+            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=1,label=label[i]+"_Test", ax=axes[m-1], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
         axes[m-1].legend(loc='upper right')
         axes[m-1].set_xlabel(features[m-1])
