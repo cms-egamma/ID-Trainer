@@ -70,6 +70,8 @@ hadtauSel='(matchedToGenEle == 0) & (matchedToGenTauJet==1) & (matchedToGenPhoto
 PhoSel='(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==0) & (matchedToGenTauJet==0) & (matchedToGenPhoton==1)'
 
 loc='/scratch/PFNtuples_July_correct/'
+import os
+if 'cern.ch' in os.uname()[1]: loc='/eos/cms/store/group/phys_egamma/akapoor/ntuple_ForPFID_July_Correct/ntuple_PFID_July_correct/'
 
 processes=[
     {
@@ -355,6 +357,33 @@ MVAs = [
                  #'ele_conversionVertexFitProbability',
                  'ele_nbrem','ele_deltaetaseed','ele_hadronicOverEm','ele_olde25max','ele_olde55'],#Input features #Should be branchs in your dataframe
      "feature_bins":[100 for i in range(22)],#same length as features
+     #Binning used only for plotting features (should be in the same order as features), does not affect training
+     'Scaler':"MinMaxScaler",
+     "DNNDict":{'epochs':1000, 'batchsize':5000, 'lr':0.001, 
+                #The other parameters which are not here, can be modified in Trainer script
+                'model': Sequential([Dense(24, kernel_initializer='glorot_normal', activation='relu'),
+                                     Dense(48, activation="relu"),
+                                     Dense(24, activation="relu"),
+                                     Dropout(0.1),
+                                     Dense(len(Classes),activation="softmax")]),
+                'compile':{'loss':'categorical_crossentropy','optimizer':Adam(lr=0.001), 'metrics':['accuracy']},
+                'earlyStopping': EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
+                #check the modelDNN1 function above, you can also create your own
+               }
+    },
+
+    
+    {"MVAtype":"DNN_rechitandclusteriso_2drwt_withpteta",
+     "Color":"green", #Plot color for MVA
+     "Label":"DNN_rechitiso_2drwt_withpteta", # label can be anything (this is how you will identify them on plot legends)
+     "features":["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta", 
+                 "ele_oldhe", "ele_ep", "ele_olde15", "ele_eelepout",
+                 "ele_kfchi2", "ele_kfhits", "ele_expected_inner_hits","ele_dr03TkSumPt",
+                 "ele_dr03EcalRecHitSumEt","ele_dr03HcalTowerSumEt","ele_gsfchi2","scl_eta","ele_pt",
+                 "ele_ecalPFClusterIso","ele_hcalPFClusterIso",
+                 #'ele_conversionVertexFitProbability',
+                 'ele_nbrem','ele_deltaetaseed','ele_hadronicOverEm','ele_olde25max','ele_olde55'],#Input features #Should be branchs in your dataframe
+     "feature_bins":[100 for i in range(24)],#same length as features
      #Binning used only for plotting features (should be in the same order as features), does not affect training
      'Scaler':"MinMaxScaler",
      "DNNDict":{'epochs':1000, 'batchsize':5000, 'lr':0.001, 

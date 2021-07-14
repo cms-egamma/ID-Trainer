@@ -70,6 +70,8 @@ hadtauSel='(matchedToGenEle == 0) & (matchedToGenTauJet==1) & (matchedToGenPhoto
 PhoSel='(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==0) & (matchedToGenTauJet==0) & (matchedToGenPhoton==1)'
 
 loc='/scratch/PFNtuples_July_correct/'
+import os
+if 'cern.ch' in os.uname()[1]: loc='/eos/cms/store/group/phys_egamma/akapoor/ntuple_ForPFID_July_Correct/ntuple_PFID_July_correct/'
 
 processes=[
     {
