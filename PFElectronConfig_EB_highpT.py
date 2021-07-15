@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 #####################################################################
 ####Start here
 #####################################################################
-OutputDirName = 'PFElectronConfig_EE_lowpT' #All plots, models, config file will be stored here
+OutputDirName = 'PFElectronConfig_EB_highpT' #All plots, models, config file will be stored here
 
 Debug=False # If True, only a small subset of events/objects are used for either Signal or background #Useful for quick debugging
 
@@ -45,9 +45,8 @@ loadfromsaved=False
 
 #pt and eta bins of interest -------------------------------------------------------------------
 #will be used for robustness studies and will also be used for 2D pt-eta reweighing if the reweighing option is True
-ptbins = [5,7,8,10]
-etabins = [-2.5,-2.2,-1.8,-1.6,1.6,1.8,2.2,2.5]
-#etabins = [-1.6,-1.2,-0.8,-0.5,0.0,0.5,0.8,1.2,1.6]
+ptbins = [10,30,40,50,80,100,5000] 
+etabins = [-1.6,-1.2,-0.8,-0.5,0.0,0.5,0.8,1.2,1.6]
 ptwtvar='ele_pt'
 etawtvar='scl_eta'
 ##pt and eta bins of interest -------------------------------------------------------------------
@@ -62,7 +61,7 @@ Classes = ['IsolatedSignal','NonIsolatedSignal','NonIsolatedBackground','FromHad
 ClassColors = ['#377eb8', '#ff7f00', '#4daf4a','#f781bf', '#a65628']
 
 #dictionary of processes
-CommonSel='(ele_pt < 10) & (abs(scl_eta) > 1.566) & (abs(scl_eta) < 2.5)'
+CommonSel='(ele_pt > 10) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)'
 
 PromptSel='((matchedToGenEle == 1) | (matchedToGenEle == 2)) & (matchedToGenPhoton==0)'
 bHadSel='(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & (index%10==0)'

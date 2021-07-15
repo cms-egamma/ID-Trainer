@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 #####################################################################
 ####Start here
 #####################################################################
-OutputDirName = 'PFElectronConfig_EE' #All plots, models, config file will be stored here
+OutputDirName = 'PFElectronConfig_EE_fullpT' #All plots, models, config file will be stored here
 
 Debug=False # If True, only a small subset of events/objects are used for either Signal or background #Useful for quick debugging
 
@@ -45,7 +45,7 @@ loadfromsaved=False
 
 #pt and eta bins of interest -------------------------------------------------------------------
 #will be used for robustness studies and will also be used for 2D pt-eta reweighing if the reweighing option is True
-ptbins = [10,30,40,50,80,100,5000] 
+ptbins = [5,7,8,10,30,40,50,80,100,5000] 
 etabins = [-2.5,-2.2,-1.8,-1.6,1.6,1.8,2.2,2.5]
 ptwtvar='ele_pt'
 etawtvar='scl_eta'
@@ -61,7 +61,7 @@ Classes = ['IsolatedSignal','NonIsolatedSignal','NonIsolatedBackground','FromHad
 ClassColors = ['#377eb8', '#ff7f00', '#4daf4a','#f781bf', '#a65628']
 
 #dictionary of processes
-CommonSel='(ele_pt > 10) & (abs(scl_eta) > 1.566) & (abs(scl_eta) < 2.5)'
+CommonSel='(ele_pt > 5) & (abs(scl_eta) > 1.566) & (abs(scl_eta) < 2.5)'
 
 PromptSel='((matchedToGenEle == 1) | (matchedToGenEle == 2)) & (matchedToGenPhoton==0)'
 bHadSel='(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & (index%10==0)'
@@ -372,6 +372,33 @@ MVAs = [
                }
     },
 
+    
+    {"MVAtype":"DNN_rechitandclusteriso_2drwt_withpteta",
+     "Color":"green", #Plot color for MVA
+     "Label":"DNN_rechitandclusteriso_2drwt_withpteta", # label can be anything (this is how you will identify them on plot legends)
+     "features":["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta", 
+                 "ele_oldhe", "ele_ep", "ele_olde15", "ele_eelepout",
+                 "ele_kfchi2", "ele_kfhits", "ele_expected_inner_hits","ele_dr03TkSumPt",
+                 "ele_dr03EcalRecHitSumEt","ele_dr03HcalTowerSumEt","ele_gsfchi2","scl_eta","ele_pt",
+                 "ele_ecalPFClusterIso","ele_hcalPFClusterIso",
+                 #'ele_conversionVertexFitProbability',
+                 'ele_nbrem','ele_deltaetaseed','ele_hadronicOverEm','ele_olde25max','ele_olde55'],#Input features #Should be branchs in your dataframe
+     "feature_bins":[100 for i in range(24)],#same length as features
+     #Binning used only for plotting features (should be in the same order as features), does not affect training
+     'Scaler':"MinMaxScaler",
+     "DNNDict":{'epochs':1000, 'batchsize':5000, 'lr':0.001, 
+                #The other parameters which are not here, can be modified in Trainer script
+                'model': Sequential([Dense(24, kernel_initializer='glorot_normal', activation='relu'),
+                                     Dense(48, activation="relu"),
+                                     Dense(24, activation="relu"),
+                                     Dropout(0.1),
+                                     Dense(len(Classes),activation="softmax")]),
+                'compile':{'loss':'categorical_crossentropy','optimizer':Adam(lr=0.001), 'metrics':['accuracy']},
+                'earlyStopping': EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
+                #check the modelDNN1 function above, you can also create your own
+               }
+    },
+
         
     {"MVAtype":"DNN_rechitandclusteriso_2drwt",
      "Color":"red", #Plot color for MVA
@@ -444,7 +471,7 @@ OverlayWP=['passElectronSelection']
 OverlayWPColors = ["black"] #Colors on plots for WPs
 
 #To print thresholds of mva scores for corresponding signal efficiency
-SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
+SigEffWPs=["95%","98%"] # Example for 80% and 90% Signal Efficiency Working Points
 ######### 
 
 

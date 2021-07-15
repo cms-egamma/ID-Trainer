@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 #####################################################################
 ####Start here
 #####################################################################
-OutputDirName = 'PFElectronConfig_EB' #All plots, models, config file will be stored here
+OutputDirName = 'PFElectronConfig_EB_fullpT' #All plots, models, config file will be stored here
 
 Debug=False # If True, only a small subset of events/objects are used for either Signal or background #Useful for quick debugging
 
@@ -45,7 +45,7 @@ loadfromsaved=False
 
 #pt and eta bins of interest -------------------------------------------------------------------
 #will be used for robustness studies and will also be used for 2D pt-eta reweighing if the reweighing option is True
-ptbins = [10,30,40,50,80,100,5000] 
+ptbins = [5,7,8,10,30,40,50,80,100,5000] 
 etabins = [-1.6,-1.2,-0.8,-0.5,0.0,0.5,0.8,1.2,1.6]
 ptwtvar='ele_pt'
 etawtvar='scl_eta'
@@ -61,7 +61,7 @@ Classes = ['IsolatedSignal','NonIsolatedSignal','NonIsolatedBackground','FromHad
 ClassColors = ['#377eb8', '#ff7f00', '#4daf4a','#f781bf', '#a65628']
 
 #dictionary of processes
-CommonSel='(ele_pt > 10) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)'
+CommonSel='(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)'
 
 PromptSel='((matchedToGenEle == 1) | (matchedToGenEle == 2)) & (matchedToGenPhoton==0)'
 bHadSel='(matchedToGenEle != 1) & (matchedToGenEle != 2) &  (matchedToHadron==3) & (matchedToGenTauJet==0) & (matchedToGenPhoton==0) & (index%10==0)'
@@ -375,7 +375,7 @@ MVAs = [
     
     {"MVAtype":"DNN_rechitandclusteriso_2drwt_withpteta",
      "Color":"green", #Plot color for MVA
-     "Label":"DNN_rechitiso_2drwt_withpteta", # label can be anything (this is how you will identify them on plot legends)
+     "Label":"DNN_rechitandclusteriso_2drwt_withpteta", # label can be anything (this is how you will identify them on plot legends)
      "features":["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta", 
                  "ele_oldhe", "ele_ep", "ele_olde15", "ele_eelepout",
                  "ele_kfchi2", "ele_kfhits", "ele_expected_inner_hits","ele_dr03TkSumPt",
@@ -471,7 +471,7 @@ OverlayWP=['passElectronSelection']
 OverlayWPColors = ["black"] #Colors on plots for WPs
 
 #To print thresholds of mva scores for corresponding signal efficiency
-SigEffWPs=["80%","90%"] # Example for 80% and 90% Signal Efficiency Working Points
+SigEffWPs=["95%","98%"] # Example for 80% and 90% Signal Efficiency Working Points
 ######### 
 
 
