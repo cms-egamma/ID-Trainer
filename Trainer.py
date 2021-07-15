@@ -44,7 +44,7 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="PFElectronConfig"
+    TrainConfig="PFElectronConfig_EB_reclus_pteta_test"
     exec("import "+TrainConfig+" as Conf")
 else:
     TrainConfig=sys.argv[1]
@@ -160,13 +160,10 @@ else:
 # In[14]:
 
 
-#fn = lambda row: Conf.Classes.index(row.Class)
-#df_final[cat] = df_final.apply(fn, axis=1)
-
-
 df_final[cat]=0
 for i,k in enumerate(Conf.Classes):
     df_final.loc[df_final.Class == k, cat] = i
+
 
 # In[15]:
 
@@ -389,7 +386,7 @@ for MVA in Conf.MVAs:
             plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBROC.png")
 
 
-# In[27]:
+# In[29]:
 
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -424,7 +421,23 @@ for MVA in Conf.MVAs:
         train_history = modelDNN.fit(X_train,Y_train,epochs=MVA["DNNDict"]['epochs'],batch_size=MVA["DNNDict"]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
         modelDNN.save(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.h5")
+        
+        training_loss = train_history.history['loss']
+        test_loss = train_history.history['val_loss']
 
+        # Create count of the number of epochs
+        epoch_count = range(1, len(training_loss) + 1)
+
+        # Visualize loss history
+        fig, axes = plt.subplots(1, 1, figsize=(5, 5))
+        axes.plot(epoch_count, training_loss)
+        axes.plot(epoch_count, test_loss)
+        axes.legend(['Training Loss', 'Test Loss'])
+        axes.set_xlabel('Epoch')
+        axes.set_ylabel('Loss')
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"Loss.pdf")
+        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"Loss.png")
+        
         y_train_pred=np.array(modelDNN.predict(X_train,batch_size=5000)) #This is not the training batch size
         y_test_pred=np.array(modelDNN.predict(X_test,batch_size=5000)) #This is not the training batch size
         #https://anshulhep.medium.com/make-your-tensorflow-keras-predictions-faster-with-batch-size-8bbd780b9c08
@@ -490,7 +503,7 @@ for MVA in Conf.MVAs:
             
 
 
-# In[28]:
+# In[ ]:
 
 
 for MVA in Conf.MVAs:
@@ -498,7 +511,7 @@ for MVA in Conf.MVAs:
         prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
 
 
-# In[29]:
+# In[ ]:
 
 
 if len(Conf.Classes)<=2:
@@ -523,7 +536,7 @@ if len(Conf.Classes)<=2:
     plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[83]:
+# In[ ]:
 
 
 def eff(group_df,var,cat,catvalue):
@@ -574,54 +587,7 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     figMVAComp.savefig(plot_dir+plotname)
 
 
-# In[84]:
-
-
-for MVA in Conf.MVAs:
-    if len(Conf.Classes) > 2:
-        print("Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
-        print("Hardcoded: Choosing hardcoded signal efficieny at 98% and 95%")
-
-        df_final["ele_pt_bin"] = pd.cut(df_final[Conf.ptwtvar], bins=Conf.ptbins, labels=list(range(len(Conf.ptbins)-1)))
-        df_final["ele_eta_bin"] = pd.cut(df_final[Conf.etawtvar], bins=Conf.etabins, labels=list(range(len(Conf.etabins)-1)))
-
-        EB_train=df_final.loc[TrainIndices]
-        EB_test=df_final.loc[TestIndices]
-
-        mydftrain=EB_train.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile([1-0.98,1-0.95])
-        mydftest=EB_test.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile([1-0.98,1-0.95])
-
-        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] > mydftrain.iat[0,0], MVA["MVAtype"]+"_predpass"] = 1
-        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] < mydftrain.iat[0,0], MVA["MVAtype"]+"_predpass"] = 0
-
-        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] > mydftrain.iat[1,0], MVA["MVAtype"]+"_predpass95"] = 1
-        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] < mydftrain.iat[1,0], MVA["MVAtype"]+"_predpass95"] = 0
-
-        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] > mydftest.iat[0,0], MVA["MVAtype"]+"_predpass"] = 1
-        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] < mydftest.iat[0,0], MVA["MVAtype"]+"_predpass"] = 0
-
-        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] > mydftest.iat[1,0], MVA["MVAtype"]+"_predpass95"] = 1
-        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] < mydftest.iat[1,0], MVA["MVAtype"]+"_predpass95"] = 0
-
-        variables=['ele_pt_bin','ele_eta_bin']
-        bins=[Conf.ptbins,Conf.etabins]
-        xaxislabels=['$p_T$ (GeV)','$\eta$']
-        Wps=Conf.OverlayWP
-
-        for variable,xaxislabel,binn in zip(variables,xaxislabels,bins):
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title="New MultiClass ID",plotname="New_MultiClass_ID_Val_"+variable+"="+str(mydftrain.iat[0,0])+".pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass95",groupbyvar=variable,ptbins=binn,label=xaxislabel,title="New MultiClass ID",plotname="New_MultiClass_ID_Val95_"+variable+"="+str(mydftrain.iat[1,0])+".pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-            for Wp in Wps:
-                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+"_.pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-
-
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title="New MultiClass ID",plotname="New_MultiClass_ID_Val_"+variable+"="+str(mydftest.iat[0,0])+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass95",groupbyvar=variable,ptbins=binn,label=xaxislabel,title="New MultiClass ID",plotname="New_MultiClass_ID_Val95_"+variable+"="+str(mydftest.iat[1,0])+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-            for Wp in Wps:
-                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-
-
-# In[36]:
+# In[ ]:
 
 
 PredMVAs=[]
@@ -629,26 +595,82 @@ for MVA in Conf.MVAs:
     PredMVAs.append(MVA["MVAtype"]+'_pred')
 SigEffWPs=Conf.SigEffWPs[:]
 for i,SigEffWPi in enumerate(SigEffWPs):
-    SigEffWPs[i]=int(SigEffWPi.replace('%', ''))/100
+    SigEffWPs[i]=1-(int(SigEffWPi.replace('%', ''))/100)
+    
 
+for MVA in Conf.MVAs:
+
+        df_final["ele_pt_bin"] = pd.cut(df_final[Conf.ptwtvar], bins=Conf.ptbins, labels=list(range(len(Conf.ptbins)-1)))
+        df_final["ele_eta_bin"] = pd.cut(df_final[Conf.etawtvar], bins=Conf.etabins, labels=list(range(len(Conf.etabins)-1)))
+
+        EB_train=df_final.loc[TrainIndices]
+        EB_test=df_final.loc[TestIndices]
+
+        if len(Conf.Classes) > 2:
+            print("Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
+            mydftrain=EB_train.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+            mydftest=EB_test.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+        if len(Conf.Classes) < 3:
+            print("Assuming that second class is signal: To make any change, please change hardcoded discriminator")
+            mydftrain=EB_train.query(cat+"==1")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+            mydftest=EB_test.query(cat+"==1")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+            
+        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] > mydftrain.iat[0,0], MVA["MVAtype"]+"_predpass"] = 1
+        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] < mydftrain.iat[0,0], MVA["MVAtype"]+"_predpass"] = 0
+
+        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] > mydftrain.iat[1,0], MVA["MVAtype"]+"_predpass1"] = 1
+        EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] < mydftrain.iat[1,0], MVA["MVAtype"]+"_predpass1"] = 0
+
+        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] > mydftest.iat[0,0], MVA["MVAtype"]+"_predpass"] = 1
+        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] < mydftest.iat[0,0], MVA["MVAtype"]+"_predpass"] = 0
+
+        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] > mydftest.iat[1,0], MVA["MVAtype"]+"_predpass1"] = 1
+        EB_test.loc[EB_test[MVA["MVAtype"]+"_pred"] < mydftest.iat[1,0], MVA["MVAtype"]+"_predpass1"] = 0
+
+        variables=['ele_pt_bin','ele_eta_bin']
+        bins=[Conf.ptbins,Conf.etabins]
+        xaxislabels=['$p_T$ (GeV)','$\eta$']
+        Wps=Conf.OverlayWP
+
+        for variable,xaxislabel,binn in zip(variables,xaxislabels,bins):
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[0]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable+"="+str(mydftrain.iat[0,0])+".pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass1",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[1]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable+"="+str(mydftrain.iat[1,0])+".pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            for Wp in Wps:
+                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+"_.pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+
+
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[0]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable+"="+str(mydftest.iat[0,0])+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass1",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[1]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable+"="+str(mydftest.iat[1,0])+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            for Wp in Wps:
+                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+
+
+# In[ ]:
+
+
+prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
+if len(Conf.Classes)>2:
+    mydf=df_final.query("TrainDataset==1 & ("+cat+"==1 | "+cat+"==0"+")")[PredMVAs].quantile(SigEffWPs)
 if len(Conf.Classes)<=2:
-    prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
     mydf=df_final.query("TrainDataset==1 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
-    mydf.insert(0, "WPs", Conf.SigEffWPs, True)
-    mydf.set_index("WPs",inplace=True)
-    prGreen(mydf)
-    mydf.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.html")
-    mydf.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.csv")
-    prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
+mydf.insert(0, "WPs", Conf.SigEffWPs, True)
+mydf.set_index("WPs",inplace=True)
+prGreen(mydf)
+mydf.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.html")
+mydf.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.csv")
+prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
+if len(Conf.Classes)>2:
+    mydf2=df_final.query("TrainDataset==0 & ("+cat+"==1 | "+cat+"==0"+")")[PredMVAs].quantile(SigEffWPs)
+if len(Conf.Classes)<=2:
     mydf2=df_final.query("TrainDataset==0 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
-    mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
-    mydf2.set_index("WPs",inplace=True)
-    prGreen(mydf2)
-    mydf2.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.html")
-    mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
+mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
+mydf2.set_index("WPs",inplace=True)
+prGreen(mydf2)
+mydf2.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.html")
+mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[37]:
+# In[ ]:
 
 
 
