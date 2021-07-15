@@ -160,9 +160,13 @@ else:
 # In[14]:
 
 
-fn = lambda row: Conf.Classes.index(row.Class)
-df_final[cat] = df_final.apply(fn, axis=1)
+#fn = lambda row: Conf.Classes.index(row.Class)
+#df_final[cat] = df_final.apply(fn, axis=1)
 
+
+df_final[cat]=0
+for i,k in enumerate(Conf.Classes):
+    df_final.loc[df_final.Class == k, cat] = i
 
 # In[15]:
 
