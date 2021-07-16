@@ -1,7 +1,7 @@
 universe = vanilla
 +JobFlavour = "workday"
 executable            = train.sh
-arguments = "PFElectronConfig_EB_fullpT"
+arguments = "PFElectronConfig_lowpT"
 log = test.log
 output = condor_ouput/outfile.$(Cluster).$(Process).out
 error = condor_ouput/errors.$(Cluster).$(Process).err
