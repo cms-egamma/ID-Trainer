@@ -202,3 +202,58 @@ def df_pteta_rwt(Mdf,
     if returnOnlyPosWeights==0: return 0
     else:
         return ptwt
+    
+    
+    
+def df_pteta_rwt(Mdf,
+                 label,
+                 returnOnlyPosWeights=0,
+                 ptw = [10,30,40,50,200,10000],
+                 etaw = [-1.5,-1.0,1.0,1.5],
+                 eta='',
+                 pt='',
+                 SumWeightCol="wt",
+                 NewWeightCol="NewWt",cand="",
+                 Classes=[""]):
+    Mdf["rwt"]=1
+    Mdf[NewWeightCol]=1
+    ptwt = [1.0]*len(ptw)
+    etawt = [1.0]*len(etaw)
+
+    for k in range(len(etaw)):
+        if k == len(etaw)-1:
+            continue
+        for i in range(len(ptw)):
+            if i == len(ptw)-1:
+                continue
+            for target in Classes:
+                if target != cand:
+                    targetSum = Mdf.loc[(Mdf[pt] <ptw[i+1]) & (Mdf[pt] >ptw[i])
+                                        & (Mdf[eta] <etaw[k+1]) & (Mdf[eta] >etaw[k])
+                                        &(Mdf[label]==target),SumWeightCol].sum()
+                    candSum = Mdf.loc[(Mdf[pt] <ptw[i+1]) & (Mdf[pt] >ptw[i])
+                                      & (Mdf[eta] <etaw[k+1]) & (Mdf[eta] >etaw[k])
+                                      &(Mdf[label]==cand),SumWeightCol].sum()
+
+                    #print('Number of xsec events in signal for pt '+str(ptw[i])+' to '+str(ptw[i+1])+ 'before  weighing = '+str(targetSum))
+                    #print('Number of xsec events in background for pt '+str(ptw[i])+' to '+str(ptw[i+1])+ 'before  weighing = '+str(candSum))
+
+                    if candSum>0 and targetSum>0:
+                        ptwt[i]=candSum/(targetSum)
+                    else:
+                        ptwt[i]=0
+
+                    Mdf.loc[(Mdf[pt] <ptw[i+1]) & (Mdf[pt] >ptw[i])
+                            & (Mdf[eta] <etaw[k+1]) & (Mdf[eta] >etaw[k])
+                            &(Mdf[label]==cand),"rwt"] = 1.0
+                    Mdf.loc[(Mdf[pt] <ptw[i+1]) & (Mdf[pt] >ptw[i])
+                            & (Mdf[eta] <etaw[k+1]) & (Mdf[eta] >etaw[k])
+                            &(Mdf[label]==target),"rwt"] = ptwt[i]
+
+    Mdf.loc[:,NewWeightCol] = Mdf.loc[:,"rwt"]*Mdf.loc[:,SumWeightCol]
+
+    for justclass in Classes:
+        Sum = Mdf.loc[Mdf[label]==justclass,NewWeightCol].sum()
+        print(f'Number of events in {justclass} after  weighing = '+str(Sum))
+
+    return Mdf[NewWeightCol]
