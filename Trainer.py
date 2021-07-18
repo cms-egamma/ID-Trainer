@@ -5,6 +5,10 @@
 
 
 import sys
+import matplotlib as mpl
+mpl.rcParams['figure.dpi'] = 200
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 import tensorflow as tf
 import random
 import numpy as np
@@ -44,7 +48,7 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="PFElectronConfig_EB_reclus_pteta_test"
+    TrainConfig="Configs.MultiClassClassification_with_XGBoost_and_DNN"
     exec("import "+TrainConfig+" as Conf")
 else:
     TrainConfig=sys.argv[1]
@@ -57,12 +61,15 @@ else:
 # In[5]:
 
 
+def modify(df):
+    return 0
 if not hasattr(Conf, 'MVAlogplot'): Conf.MVAlogplot=False
 if not hasattr(Conf, 'Multicore'): Conf.Multicore=False
 if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
 if not hasattr(Conf, 'flatten'): Conf.flatten=False
 if not hasattr(Conf, 'testsize'): Conf.testsize=0.2
 if not hasattr(Conf, 'Debug'): Conf.Debug=False
+if not hasattr(Conf, 'Thresholds'):Conf.Thresholds=False
 
 
 # In[6]:
@@ -160,27 +167,33 @@ else:
 # In[14]:
 
 
-df_final[cat]=0
-for i,k in enumerate(Conf.Classes):
-    df_final.loc[df_final.Class == k, cat] = i
+len(df_final)
 
 
 # In[15]:
 
 
-import inspect
-if (hasattr(Conf, 'modifydf') and inspect.isfunction(Conf.modfiydf)):
-    Conf.modfiydf(df_final)
+df_final[cat]=0
+for i,k in enumerate(Conf.Classes):
+    df_final.loc[df_final.Class == k, cat] = i
 
 
 # In[16]:
+
+
+if hasattr(Conf,'modifydf'):
+    if callable(getattr(Conf,'modifydf')):
+        Conf.modifydf(df_final)
+
+
+# In[17]:
 
 
 index = df_final.index
 Classes=Conf.Classes
 
 
-# In[17]:
+# In[18]:
 
 
 from sklearn.model_selection import train_test_split
@@ -189,7 +202,7 @@ TrainIndices=[]
 TestIndices=[]
 
 
-# In[18]:
+# In[19]:
 
 
 for myclass in Classes:
@@ -200,7 +213,7 @@ for myclass in Classes:
     TestIndices=TestIndices + myclassTestIndices
 
 
-# In[19]:
+# In[20]:
 
 
 df_final.loc[TrainIndices,'Dataset'] = "Train"
@@ -210,14 +223,15 @@ df_final.loc[TrainIndices,'TrainDataset'] = 1
 df_final.loc[TestIndices,'TrainDataset'] = 0
 
 
-# In[20]:
+# In[21]:
 
 
 prGreen("Reading classes:")
 print(df_final.Class.unique().tolist())
+#print(df_final[cat].unique().tolist())
 
 
-# In[21]:
+# In[22]:
 
 
 import seaborn as sns
@@ -231,15 +245,15 @@ plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.pdf")
 plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
 
 
-# In[22]:
+# In[23]:
 
 
-df_final[weight]=1
+df_final[weight]=df_final['xsecwt']
 
-ReweightClass=Conf.WhichClassToReweightTo
 
-print("After reweighting> In Training:")
-if Conf.Reweighing=='True':
+if any(hasattr(Conf, attr) for attr in ['Reweighing', 'ptbins','ptwtvar','etawtvar','etabins','WhichClassToReweightTo'])  and Conf.Reweighing=='True':
+    ReweightClass=Conf.WhichClassToReweightTo
+    print("After reweighting> In Training:")
     df_final.loc[TrainIndices,weight]=ptetaRwt.df_pteta_rwt(df_final.loc[TrainIndices],"Class",
                                                    ptw=Conf.ptbins,etaw=Conf.etabins,
                                                    pt=Conf.ptwtvar,eta=Conf.etawtvar,
@@ -250,8 +264,9 @@ if Conf.Reweighing=='True':
 # In[22]:
 
 
-print("After reweighting> In Testing:")
-if Conf.Reweighing=='True':
+if hasattr(Conf, 'Reweighing') and Conf.Reweighing=='True':
+    ReweightClass=Conf.WhichClassToReweightTo
+    print("After reweighting> In Testing:")
     df_final.loc[TestIndices,weight]=ptetaRwt.df_pteta_rwt(df_final.loc[TestIndices],"Class",
                                                   ptw=Conf.ptbins,etaw=Conf.etabins,
                                                   pt=Conf.ptwtvar,eta=Conf.etawtvar,
@@ -259,7 +274,7 @@ if Conf.Reweighing=='True':
                                                   cand=ReweightClass,Classes=Conf.Classes)
 
 
-# In[23]:
+# In[24]:
 
 
 import numpy as np
@@ -267,35 +282,37 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("Class"):
-    group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=i, ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=2)
-    ax[0].set_title("$p_T$ before reweighting")
-    ax[0].legend()
-    ax[0].set_xscale('log')
-    group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=i, ax=ax[1], density=False, ls='-', weights =group_df["NewWt"],linewidth=2)
-    ax[1].set_title("$p_T$ after reweighting")
-    ax[1].legend()
-    ax[1].set_xscale('log')
-fig.savefig(Conf.OutputDirName+"/pT_rwt.pdf")
+if any(hasattr(Conf, attr) for attr in ['Reweighing', 'ptbins','ptwtvar','etawtvar','etabins','WhichClassToReweightTo']):
 
-fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("Class"):
-    group_df[Conf.etawtvar].hist(histtype='step',
-                                 bins=Conf.etabins,
-                                 #[i for i in range(len(Conf.etabins)-1)],
-                                 alpha=0.7,label=i, ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=2)
-    ax[0].set_title("$\eta$ before reweighting")
-    ax[0].legend()
-    group_df[Conf.etawtvar].hist(histtype='step',
-                                 bins=Conf.etabins,
-                                 alpha=0.7,label=i, ax=ax[1], density=False, ls='-', weights =group_df["NewWt"],linewidth=2)
-    ax[1].set_title("$\eta$ after reweighting")
-    ax[1].legend()
-fig.savefig(Conf.OutputDirName+"/eta_rwt.pdf")
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("Class"):
+        group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=i, ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=2)
+        ax[0].set_title("$p_T$ before reweighting")
+        ax[0].legend()
+        ax[0].set_xscale('log')
+        group_df[Conf.ptwtvar].hist(histtype='step', bins=Conf.ptbins, alpha=0.7,label=i, ax=ax[1], density=False, ls='-', weights =group_df["NewWt"],linewidth=2)
+        ax[1].set_title("$p_T$ after reweighting")
+        ax[1].legend()
+        ax[1].set_xscale('log')
+    fig.savefig(Conf.OutputDirName+"/pT_rwt.pdf")
+
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby("Class"):
+        group_df[Conf.etawtvar].hist(histtype='step',
+                                     bins=Conf.etabins,
+                                     #[i for i in range(len(Conf.etabins)-1)],
+                                     alpha=0.7,label=i, ax=ax[0], density=False, ls='-', weights =group_df["xsecwt"],linewidth=2)
+        ax[0].set_title("$\eta$ before reweighting")
+        ax[0].legend()
+        group_df[Conf.etawtvar].hist(histtype='step',
+                                     bins=Conf.etabins,
+                                     alpha=0.7,label=i, ax=ax[1], density=False, ls='-', weights =group_df["NewWt"],linewidth=2)
+        ax[1].set_title("$\eta$ after reweighting")
+        ax[1].legend()
+    fig.savefig(Conf.OutputDirName+"/eta_rwt.pdf")
 
 
-# In[24]:
+# In[25]:
 
 
 def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
@@ -309,25 +326,40 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
-# In[25]:
+# In[26]:
 
 
 import pickle
 import multiprocessing
+import seaborn as sns
+
+def corre(df,Classes=[''],MVA={}):
+    for C in Classes:
+            for k in ["Train","Test"]:
+                fig, axes = plt.subplots(1, 1, figsize=(len(MVA["features"])/2, len(MVA["features"])/2))
+                cor = df.loc[(df['Dataset'] == k) & (df['Class'] == str(C))][MVA["features"]].corr()
+                sns.heatmap(cor, annot=True, cmap=plt.cm.Reds,ax=axes,annot_kws={"size":len(MVA["features"])/4})
+                axes.tick_params(axis='x', labelsize=len(MVA["features"])/2)
+                axes.tick_params(axis='y', labelsize=len(MVA["features"])/2)
+                #axes.set_xticklabels(MVA["features"],fontsize= len(MVA["features"]))
+                #axes.set_yticklabels(MVA["features"],fontsize= len(MVA["features"]))
+                fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+C+"_CORRELATION_"+k+".png")
 
 
-# In[26]:
+# In[27]:
 
 
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.utils import to_categorical
 for MVA in Conf.MVAs:
+    corre(df_final,Conf.Classes,MVA)
+    MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
+    MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
+    MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
+    
     if 'XGB' in MVA["MVAtype"]:
-        if len(Conf.Classes)>2:
-            print(f"{MVA['MVAtype']}: Sorry, at the moment XGBoost implementation does not support more than two classes!")
-            print(f"{MVA['MVAtype']}: If you really need multi-class classification, you can use a DNN")
-            continue
-        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
-        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
-        MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
+        ###############XGB#######################################
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,MVA["features"],cat,weight)
         prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
         exec("from sklearn.preprocessing import "+MVA["Scaler"])
@@ -337,65 +369,72 @@ for MVA in Conf.MVAs:
         prGreen(MVA["MVAtype"]+" Training starting")
         import xgboost as xgb
         from sklearn.model_selection import cross_val_score, GridSearchCV
-        xgb_model = xgb.XGBClassifier(objective="binary:logistic", random_state=Conf.RandomState)
-        #xgb_model.set_config(verbosity=2)
+        eval_s = [(X_train, Y_train),(X_test,Y_test)]
+        if "UseGPU" in MVA and MVA["UseGPU"]:
+            xgb_model = xgb.XGBClassifier(objective="binary:logistic", tree_method= 'gpu_hist',random_state=Conf.RandomState)
+        else:
+            xgb_model = xgb.XGBClassifier(objective="binary:logistic",random_state=Conf.RandomState)
         prGreen("Performing XGB grid search")
+        
         if Conf.Multicore:
             cv = GridSearchCV(xgb_model, MVA["XGBGridSearch"],
                               scoring='neg_log_loss',cv=3,verbose=1,n_jobs=multiprocessing.cpu_count())#multiprocessing.cpu_count())
         else:
             cv = GridSearchCV(xgb_model, MVA["XGBGridSearch"],
                               scoring='neg_log_loss',cv=3,verbose=1)
-        search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=1)
+        search=cv.fit(X_train, Y_train, sample_weight=Wt_train,verbose=0,eval_set=eval_s)
         pickle.dump(cv, open(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelXGB.pkl", "wb"))
-        #modelDNN.save(Conf.OutputDirName+"/"+MVA+"_"+"modelDNN.h5")
         prGreen("Expected neg log loss of XGB model = "+str((np.round(np.average(search.best_score_),3))*100)+'%')
         #prGreen("Expected accuracy of XGB model = "+str((np.average(search.best_score_))*100)+'%')
         prGreen("XGB Best Parameters")
-
         #json.dumps(search.best_params_)
         prGreen(str(search.best_params_))
-
-        df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=cv.predict_proba(X_train)[:,1]
-        df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=cv.predict_proba(X_test)[:,1]
-
-        prGreen("Plotting output response for XGB")
-        fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-        plot_mva(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred",bins=50,cat="Class",Wt=weight,ax=axes,sample='train',ls='dashed',logscale=Conf.MVAlogplot,label=Conf.Classes)
-        plot_mva(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred",bins=50,cat="Class",Wt=weight,ax=axes,sample='test',ls='dotted',logscale=Conf.MVAlogplot,label=Conf.Classes)
-        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBMVA.pdf")
-        plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBMVA.png")
-
-        prGreen("Plotting ROC for XGB")
-        fig, axes = plt.subplots(1, 1, figsize=(5, 5))
+        results = cv.best_estimator_.evals_result()
+        print(results)
+        if len(Conf.Classes)<3:
+            epochs = len(results['validation_0']['error'])
+        else:
+            epochs = len(results['validation_0']['merror'])
+        x_axis = range(0, epochs)
+        fig, ax = plt.subplots(figsize=(5,5))
+        if len(Conf.Classes)<3:
+            ax.plot(x_axis, results['validation_0']['error'], label='Train')
+            ax.plot(x_axis, results['validation_1']['error'], label='Test')
+        else:
+            ax.plot(x_axis, results['validation_0']['merror'], label='Train')
+            ax.plot(x_axis, results['validation_1']['merror'], label='Test')
+        ax.legend()
+        ax.set_ylabel('error')
+        ax.set_xlabel('epochs')
+        ax.set_title(MVA["MVAtype"]+' XGBoost Error')
+        fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"_error_.png")
+        print("All XGBoost parameters")
+        print(cv.get_params())
+        y_test_pred=cv.predict_proba(X_test)
+        y_train_pred=cv.predict_proba(X_train)
+        Y_train = to_categorical(Y_train, num_classes=len(Conf.Classes))
+        Y_test = to_categorical(Y_test, num_classes=len(Conf.Classes))
+        
         if len(Conf.Classes)<=2:
-            plot_roc_curve(df_final.query('TrainDataset==1'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='-', label=MVA["Label"]+' Training',cat=cat,Wt=weight)
-            plot_roc_curve(df_final.query('TrainDataset==0'),MVA["MVAtype"]+"_pred", tpr_threshold=0, ax=axes, color=None, linestyle='--', label=MVA["Label"]+' Testing',cat=cat,Wt=weight)
-            if len(Conf.OverlayWP)>0:
-                for color,OverlayWpi in zip(Conf.OverlayWPColors,Conf.OverlayWP):
-                    plot_single_roc_point(df_final.query('TrainDataset==0'), var=OverlayWpi, ax=axes, color=color, marker='o', markersize=6, label=OverlayWpi+" Test dataset", cat=cat,Wt=weight)
-            axes.set_ylabel("Background efficiency")
-            axes.set_xlabel("Signal efficiency")
-            axes.set_title(MVA["MVAtype"])
-            axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
-                      horizontalalignment='center',
-                      verticalalignment='center',
-                      rotation='vertical',
-                      transform=axes.transAxes)
-            plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBROC.pdf")
-            plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"XGBROC.png")
+            df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=cv.predict_proba(X_train)[:,0]
+            df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=cv.predict_proba(X_test)[:,0]
 
 
-# In[29]:
-
-
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.utils import to_categorical
-for MVA in Conf.MVAs:
+        if len(Conf.Classes)>2:
+            print("Only for threshold purposes: Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
+            print("This does not affect the ROC or scores")
+            df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=np.sum([cv.predict_proba(X_train)[:, 0],cv.predict_proba(X_train)[:, 1]],axis=0)
+            df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=np.sum([cv.predict_proba(X_test)[:, 0],cv.predict_proba(X_test)[:, 1]],axis=0)
+        ###############XGB#######################################
+        
+        
+    if 'Genetic' in MVA["MVAtype"]:
+        ###############Genetic#######################################
+        prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
+        ###############Genetic#######################################
+       
     if 'DNN' in MVA["MVAtype"]:
-        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
-        MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
-        MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
+        ###############DNN#######################################
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,MVA["features"],cat,weight)
         Y_train = to_categorical(Y_train, num_classes=len(Conf.Classes))
         Y_test = to_categorical(Y_test, num_classes=len(Conf.Classes))
@@ -406,9 +445,6 @@ for MVA in Conf.MVAs:
         X_train = sc.fit_transform(X_train)
         X_test = sc.transform(X_test)
         prGreen("DNN fitting running")
-
-        #es=['']
-        #if hasattr(Conf, 'MVA["DNNDict"]['earlyStopping']'):
         try:
             es = MVA["DNNDict"]['earlyStopping']
             print("Setting early stopping")
@@ -441,14 +477,43 @@ for MVA in Conf.MVAs:
         y_train_pred=np.array(modelDNN.predict(X_train,batch_size=5000)) #This is not the training batch size
         y_test_pred=np.array(modelDNN.predict(X_test,batch_size=5000)) #This is not the training batch size
         #https://anshulhep.medium.com/make-your-tensorflow-keras-predictions-faster-with-batch-size-8bbd780b9c08
+        
+        if len(Conf.Classes)<=2:
+            df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=modelDNN.predict(X_train,batch_size=5000)[:,0]
+            df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=modelDNN.predict(X_test,batch_size=5000)[:,0]
 
-        from sklearn.metrics import roc_curve, auc
 
-        n_classes=len(Conf.Classes)
-        fig, axes = plt.subplots(1, n_classes, figsize=(n_classes*5, 5))
-        figMVA, axesMVA = plt.subplots(1, n_classes, figsize=(n_classes*5, 5))
+        if len(Conf.Classes)>2:
+            print("Only for threshold purposes: Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
+            print("This does not affect the ROC or scores")
+            df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=np.sum([modelDNN.predict(X_train,batch_size=5000)[:, 0],modelDNN.predict(X_train,batch_size=5000)[:, 1]],axis=0)
+            df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=np.sum([modelDNN.predict(X_test,batch_size=5000)[:, 0],modelDNN.predict(X_test,batch_size=5000)[:, 1]],axis=0)
+            
+        ###############DNN#######################################
+    from sklearn.metrics import confusion_matrix
+    fig, axes = plt.subplots(1, 1, figsize=(len(Conf.Classes)*2, len(Conf.Classes)*2))
+    cm = confusion_matrix(Y_test.argmax(axis=1), y_test_pred.argmax(axis=1))
+    cm_df = pd.DataFrame(cm,index = Conf.Classes, columns = Conf.Classes)
+    sns.heatmap(cm_df, annot=True,ax=axes)
+    axes.set_yticklabels(axes.get_yticklabels(), va='center')
+    axes.set_xticklabels(axes.get_yticklabels(), ha='center')
+    fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"CM_Testing.png")
+    
+    fig, axes = plt.subplots(1, 1, figsize=(len(Conf.Classes)*2, len(Conf.Classes)*2))
+    cm = confusion_matrix(Y_train.argmax(axis=1), y_train_pred.argmax(axis=1))
+    cm_df = pd.DataFrame(cm,index = Conf.Classes,columns = Conf.Classes)
+    sns.heatmap(cm_df, annot=True,ax=axes)
+    axes.set_yticklabels(axes.get_yticklabels(), va='center')
+    axes.set_xticklabels(axes.get_yticklabels(), ha='center')
+    fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"CM_Training.png") 
+    
+    from sklearn.metrics import roc_curve, auc
 
-        for i in range(n_classes):
+    n_classes=len(Conf.Classes)
+    
+    fig, axes = plt.subplots(1, n_classes, figsize=(n_classes*5, 5))
+    figMVA, axesMVA = plt.subplots(1, n_classes, figsize=(n_classes*5, 5))    
+    for i in range(n_classes):
             axMVA=axesMVA[i]
             ax=axes[i]
             for k in range(n_classes):
@@ -476,67 +541,63 @@ for MVA in Conf.MVAs:
             roc_auc = auc(fpr, tpr)
             roc_auc_tr = auc(fpr_tr, tpr_tr)
             
-            ax.plot(tpr, fpr, label='ROC curve test (area = %0.2f)' % roc_auc,linewidth=1)
-            ax.plot(tpr_tr, fpr_tr, label='ROC curve train (area = %0.2f)' % roc_auc_tr,linewidth=1)
+            ax.plot(tpr*100, fpr*100, label='ROC curve test (area = %0.2f)' % roc_auc,linewidth=1)
+            ax.plot(tpr_tr*100, fpr_tr*100, label='ROC curve train (area = %0.2f)' % roc_auc_tr,linewidth=1)
             #plt.plot([0, 1], [0, 1], 'k--')
             #ax.set_xlim([0.8, 1.0])
             #ax.set_ylim([0.0, 1.05])
-            ax.set_xlabel('Signal efficiency',fontsize=10)
-            ax.set_ylabel('Background efficiency',fontsize=10)
+            ax.set_xlabel('Signal efficiency (%)',fontsize=10)
+            ax.set_ylabel('Background efficiency (%)',fontsize=10)
             ax.set_title(MVA["MVAtype"]+' ROC: Node '+str(i+1),fontsize=10)
             ax.legend(loc="upper left",fontsize=10)
-        fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNROC.pdf")
-        fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNROC.png")
-        figMVA.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNMVA.pdf")
-        figMVA.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"DNNMVA.png")
-
-        if len(Conf.Classes)<=2:
-            df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=modelDNN.predict(X_train,batch_size=5000)[:,1]
-            df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=modelDNN.predict(X_test,batch_size=5000)[:,1]
-
-
-        if len(Conf.Classes)>2:
-            print("Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
-            df_final.loc[TrainIndices,MVA["MVAtype"]+"_pred"]=np.sum([modelDNN.predict(X_train,batch_size=5000)[:, 0],modelDNN.predict(X_train,batch_size=5000)[:, 1]],axis=0)
-            df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=np.sum([modelDNN.predict(X_test,batch_size=5000)[:, 0],modelDNN.predict(X_test,batch_size=5000)[:, 1]],axis=0)
-            
-            
+    fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"ROC.pdf")
+    fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"ROC.png")
+    figMVA.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"MVA.pdf")
+    figMVA.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"MVA.png")
+        
+        
 
 
 # In[ ]:
 
 
-for MVA in Conf.MVAs:
-    if 'Genetic' in MVA["MVAtype"]:
-        prGreen("Sorry Genetic algo not implemented yet! Coming Soon")
+
 
 
 # In[ ]:
+
+
+
+
+
+# In[28]:
 
 
 if len(Conf.Classes)<=2:
     prGreen("Plotting Final ROC")
     fig, axes = plt.subplots(1, 1, figsize=(5, 5))
-    if len(Conf.OverlayWP)>0:
+    if hasattr(Conf, 'OverlayWP') and len(Conf.OverlayWP)>0:
         for color,OverlayWpi in zip(Conf.OverlayWPColors,Conf.OverlayWP):
+            
             plot_single_roc_point(df_final.query('TrainDataset==0'), var=OverlayWpi, ax=axes, color=color, marker='o', markersize=8, label=OverlayWpi+" Test dataset", cat=cat,Wt=weight)
     if len(Conf.MVAs)>0:
         for MVAi in Conf.MVAs:
-            plot_roc_curve(df_final.query('TrainDataset==0'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.7, ax=axes, color=MVAi["Color"], linestyle='--', label=MVAi["Label"]+' Testing',cat=cat,Wt=weight)
-            plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.7, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt=weight)
-        axes.set_ylabel("Background efficiency")
-        axes.set_xlabel("Signal efficiency")
+            plot_roc_curve(df_final.query('TrainDataset==0'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='--', label=MVAi["Label"]+' Testing',cat=cat,Wt=weight)
+            plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt=weight)
+        axes.set_ylabel("Background efficiency (%)")
+        axes.set_xlabel("Signal efficiency  (%)")
         axes.set_title("Final")
         axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
                   horizontalalignment='center',
                   verticalalignment='center',
                   rotation='vertical',
                   transform=axes.transAxes)
+        axes.set_yscale("log")
     plt.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
     plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[ ]:
+# In[29]:
 
 
 def eff(group_df,var,cat,catvalue):
@@ -556,7 +617,14 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     ax=axesComp
     fulllist=[[] for i in range(len(Classes))]
     fullliste=[[[] for i in range(2)] for i in range(len(Classes))]
-    ptbinsmy=ptbins[:-1]
+    #ptbinsmy=ptbins[:-1]
+    ptbinsmy=[(ptbins[m+1]+ptbins[m])/2 for m in range(len(ptbins)-1)]
+    if groupbyvar=='ele_pt_bin':
+        ptbinsmy[len(ptbinsmy)-1]=ptbins[len(ptbins)-2]*1.2
+    #ptbinsmy.append(ptbins[len(ptbins)-1]*1.2)
+    xefulllist=[(ptbins[m+1]-ptbins[m])/2 for m in range(len(ptbins)-1)]
+    if groupbyvar=='ele_pt_bin':
+        xefulllist[len(ptbinsmy)-1]=ptbins[len(ptbins)-2]*0.2
     for i,group_df in df.groupby(groupbyvar):
         for k in range(len(Classes)):
             val=eff(group_df,var,cat,k)[0]
@@ -570,14 +638,23 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
                 
         
     for m in range(len(Classes)):
-        if m==0 or m==1:
-            marker='$S$'
-        else:
-            marker='$B$'
-        ax.errorbar(ptbinsmy,fulllist[m],yerr=fullliste[m],markersize=8,marker=marker,markeredgecolor='black',label=Classes[m],color=Colors[m])
+        if len(Classes)>2:
+            if m==0 or m==1:
+                marker='$S$'
+            else:
+                marker='$B$'
+        if len(Classes)<3:
+            if m==0:
+                marker='$S$'
+            else:
+                marker='$B$'
+        ax.errorbar(ptbinsmy,fulllist[m],xerr=xefulllist,yerr=fullliste[m],markersize=6,marker=marker,markeredgecolor='black',label=Classes[m],color=Colors[m],fmt = '.')
     ax.set_ylim(0,130)
     if groupbyvar=='ele_pt_bin':
-        ax.set_xlim(0)
+        #ax.set_yscale('log')
+        ax.set_xlim(ptbins[0],ptbins[len(ptbins)-2]*1.4)
+    #if groupbyvar=='ele_eta_bin':
+        #ax.set_xlim(ptbins[0]*1.2,ptbins[len(ptbins)-1])
     ax.set_xlabel(label)
     ax.set_ylabel("Efficiency (%)")
     ax.set_title(title)
@@ -587,33 +664,38 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     figMVAComp.savefig(plot_dir+plotname)
 
 
-# In[ ]:
+# In[30]:
 
 
-PredMVAs=[]
-for MVA in Conf.MVAs:
-    PredMVAs.append(MVA["MVAtype"]+'_pred')
-SigEffWPs=Conf.SigEffWPs[:]
-for i,SigEffWPi in enumerate(SigEffWPs):
-    SigEffWPs[i]=1-(int(SigEffWPi.replace('%', ''))/100)
+if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
+    PredMVAs=[]
+    for MVA in Conf.MVAs:
+        PredMVAs.append(MVA["MVAtype"]+'_pred')
+    SigEffWPs=Conf.SigEffWPs[:]
+    for i,SigEffWPi in enumerate(SigEffWPs):
+        SigEffWPs[i]=1-(int(SigEffWPi.replace('%', ''))/100)
     
 
-for MVA in Conf.MVAs:
+    for MVA in Conf.MVAs:
 
         df_final["ele_pt_bin"] = pd.cut(df_final[Conf.ptwtvar], bins=Conf.ptbins, labels=list(range(len(Conf.ptbins)-1)))
         df_final["ele_eta_bin"] = pd.cut(df_final[Conf.etawtvar], bins=Conf.etabins, labels=list(range(len(Conf.etabins)-1)))
 
         EB_train=df_final.loc[TrainIndices]
         EB_test=df_final.loc[TestIndices]
-
+        
         if len(Conf.Classes) > 2:
             print("Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
             mydftrain=EB_train.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
             mydftest=EB_test.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+            
+            #figMVA, axesMVA = plt.subplots(1, n_classes, figsize=(5, 5))
+            #plot_mva(EB_train, MVA["MVAtype"]+"_pred", 100, logscale=False, ax=axMVA, title="Combined Score", ls='dashed', alpha=0.5, sample='Train',cat="Class",Wt="Wt",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            
         if len(Conf.Classes) < 3:
-            print("Assuming that second class is signal: To make any change, please change hardcoded discriminator")
-            mydftrain=EB_train.query(cat+"==1")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
-            mydftest=EB_test.query(cat+"==1")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+            print("Assuming that first class is signal: To make any change, please change hardcoded discriminator")
+            mydftrain=EB_train.query(cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
+            mydftest=EB_test.query(cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
             
         EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] > mydftrain.iat[0,0], MVA["MVAtype"]+"_predpass"] = 1
         EB_train.loc[EB_train[MVA["MVAtype"]+"_pred"] < mydftrain.iat[0,0], MVA["MVAtype"]+"_predpass"] = 0
@@ -648,26 +730,27 @@ for MVA in Conf.MVAs:
 # In[ ]:
 
 
-prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
-if len(Conf.Classes)>2:
-    mydf=df_final.query("TrainDataset==1 & ("+cat+"==1 | "+cat+"==0"+")")[PredMVAs].quantile(SigEffWPs)
-if len(Conf.Classes)<=2:
-    mydf=df_final.query("TrainDataset==1 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
-mydf.insert(0, "WPs", Conf.SigEffWPs, True)
-mydf.set_index("WPs",inplace=True)
-prGreen(mydf)
-mydf.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.html")
-mydf.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.csv")
-prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
-if len(Conf.Classes)>2:
-    mydf2=df_final.query("TrainDataset==0 & ("+cat+"==1 | "+cat+"==0"+")")[PredMVAs].quantile(SigEffWPs)
-if len(Conf.Classes)<=2:
-    mydf2=df_final.query("TrainDataset==0 & "+cat+"==1")[PredMVAs].quantile(SigEffWPs)
-mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
-mydf2.set_index("WPs",inplace=True)
-prGreen(mydf2)
-mydf2.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.html")
-mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
+if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
+    prGreen("Threshold values for requested Signal Efficiencies (Train Dataset)")
+    if len(Conf.Classes)>2:
+        mydf=df_final.query("TrainDataset==1 & ("+cat+"==1 | "+cat+"==0"+")")[PredMVAs].quantile(SigEffWPs)
+    if len(Conf.Classes)<=2:
+        mydf=df_final.query("TrainDataset==1 & "+cat+"==0")[PredMVAs].quantile(SigEffWPs)
+    mydf.insert(0, "WPs", Conf.SigEffWPs, True)
+    mydf.set_index("WPs",inplace=True)
+    prGreen(mydf)
+    mydf.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.html")
+    mydf.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Train.csv")
+    prGreen("Threshold values for requested Signal Efficiencies (Test Dataset)")
+    if len(Conf.Classes)>2:
+        mydf2=df_final.query("TrainDataset==0 & ("+cat+"==1 | "+cat+"==0"+")")[PredMVAs].quantile(SigEffWPs)
+    if len(Conf.Classes)<=2:
+        mydf2=df_final.query("TrainDataset==0 & "+cat+"==0")[PredMVAs].quantile(SigEffWPs)
+    mydf2.insert(0, "WPs", Conf.SigEffWPs, True)
+    mydf2.set_index("WPs",inplace=True)
+    prGreen(mydf2)
+    mydf2.to_html(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.html")
+    mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
 # In[ ]:

@@ -1,18 +1,19 @@
 #Plotting Tools
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
     
-def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed', alpha=0.5, sample='',cat="Matchlabel",Wt="Wt",label=[""]):
+def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed', alpha=0.5, sample='',cat="Matchlabel",Wt="Wt",Classes=[''],Colors=['']):
     histtype="bar" 
-    if sample is 'test':
+    if sample == 'test':
         histtype="step"      
     if ax is None:
         ax = plt.gca()
-    for name, group in df.groupby(cat):
-        group[column].hist(bins=bins, histtype=histtype, alpha=alpha,
-                           label=name+' '+sample, ax=ax, density=True, ls=ls, weights =group[Wt],linewidth=2)
+    for Class,Color in zip(Classes,Colors):
+        df.loc[(df['Class'] == str(Class))][column].hist(bins=bins, histtype=histtype, alpha=alpha,
+                           label=Class+' '+sample, ax=ax, density=False, ls=ls, weights =list(np.ones_like(df.loc[(df['Class'] == str(Class))].index) / len(df.loc[(df['Class'] == str(Class))].index)),linewidth=2,color=Color)
     #ax.set_ylabel("density")
     ax.set_xlabel(column)
     ax.set_title(title)
@@ -24,27 +25,25 @@ def plot_roc_curve(df, score_column, tpr_threshold=0, ax=None, color=None, lines
     from sklearn import metrics
     if ax is None: ax = plt.gca()
     if label is None: label = score_column
-    fpr, tpr, thresholds = metrics.roc_curve(df[cat], df[score_column],sample_weight=df[Wt])
+    fpr, tpr, thresholds = metrics.roc_curve(df[cat], 1-df[score_column],sample_weight=df[Wt])
     mask = tpr > tpr_threshold
     fpr, tpr = fpr[mask], tpr[mask]
     auc=metrics.auc(fpr, tpr)
     label=label+' auc='+str(round(auc*100,1))+'%'
-    ax.plot(tpr, fpr, label=label, color=color, linestyle=linestyle,linewidth=1,alpha=0.7)
-    ax.set_yscale("log")
+    ax.plot(tpr*100, fpr*100, label=label, color=color, linestyle=linestyle,linewidth=1,alpha=0.7)
     ax.legend(loc='best')
     return auc
 
 def plot_single_roc_point(df, var='Fall17isoV1wpLoose', 
                           ax=None , marker='o', 
-                          markersize=6, color="red", label='', cat="Matchlabel",Wt="Wt"):
-    backgroundpass=df.loc[(df[var] == 1) & (df[cat] == 0),Wt].sum()
-    backgroundrej=df.loc[(df[var] == 0) & (df[cat] == 0),Wt].sum()
-    signalpass=df.loc[(df[var] == 1) & (df[cat] == 1),Wt].sum()
-    signalrej=df.loc[(df[var] == 0) & (df[cat] == 1),Wt].sum()
-    backgroundrej=backgroundrej/(backgroundpass+backgroundrej)
-    signaleff=signalpass/(signalpass+signalrej)
-    ax.plot([signaleff], [1-backgroundrej], marker=marker, color=color, markersize=markersize, label=label)
-    ax.set_yscale("log")
+                          markersize=6, color="red", label='', cat="Matchlabel",Wt="Wt",pos_label=0):
+    backgroundpass=df.loc[(df[var] == 1) & (df[cat] != pos_label),Wt].sum()
+    backgroundrej=df.loc[(df[var] == 0) & (df[cat] != pos_label),Wt].sum()
+    signalpass=df.loc[(df[var] == 1) & (df[cat] == pos_label),Wt].sum()
+    signalrej=df.loc[(df[var] == 0) & (df[cat] == pos_label),Wt].sum()
+    backgroundrej=(backgroundrej*100)/(backgroundpass+backgroundrej)
+    signaleff=(signalpass*100)/(signalpass+signalrej)
+    ax.plot([signaleff], [100-backgroundrej], marker=marker, color=color, markersize=markersize, label=label)
     ax.legend(loc='best')
     
 def pngtopdf(ListPattern=[],Save="mydoc.pdf"):
@@ -60,7 +59,7 @@ def pngtopdf(ListPattern=[],Save="mydoc.pdf"):
 
 def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat='Category',label=[""],weight="NewWt"):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
-    prGreen("Making"+Set+" dataset feature plots")
+    prGreen("Making "+Set+" dataset feature plots")
     for m in range(len(features)):
         for i,group_df in df_final[df_final['Dataset'] == Set].groupby(cat):
             group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=1,label=label[i], ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
