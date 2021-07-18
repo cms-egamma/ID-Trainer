@@ -37,7 +37,7 @@ Use LCG 97python3 and you will have all the dependencies! (Tested at lxplus and 
 
 #### Run on CPUs and GPUs
 
-The code can also transparently use a GPU, if a GPU card is available. The cvmfs release to use i that case is:
+The code can also transparently use a GPU, if a GPU card is available. The cvmfs release to use in that case is:
 `source /cvmfs/sft.cern.ch/lcg/views/LCG_97py3cu10/x86_64-centos7-gcc7-opt/setup.sh`
 
 
@@ -123,7 +123,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 #####################################################################
 ####Start here
 #####################################################################
-OutputDirName = 'SimpleBinaryClassification_XGBoost' #All plots, models, config file will be stored here
+OutputDirName = 'SimpleBinaryClassification' #All plots, models, config file will be stored here
 Debug=False # If True, only a small subset of events/objects are used for either Signal or background #Useful for quick debugging
 
 #Branches to read #Should be in the root files #Only the read branches can be later used for any purpose
