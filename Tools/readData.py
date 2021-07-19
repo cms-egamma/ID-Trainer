@@ -19,14 +19,14 @@ def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=
         ddd["Class"]=Class
         if type(xsecwt) == type(('xsec',2)):
             ddd["xsecwt"]=ddd[xsecwt[0]]*xsecwt[1]
-        if type(xsecwt) == type("hello"):
+        elif type(xsecwt) == type("hello"):
             ddd["xsecwt"]=ddd[xsecwt]
         elif type(xsecwt) == type(0.1):
             ddd["xsecwt"]=xsecwt
         elif type(xsecwt) == type(1):
             ddd["xsecwt"]=xsecwt
         else:
-            print("CAUTION: xsecwt should be a branch name or a number... Assigning the weight as 1")        
+            print("CAUTION: xsecwt should be a branch name or a number or a tuple... Assigning the weight as 1")        
         print(file)
         return ddd
 
