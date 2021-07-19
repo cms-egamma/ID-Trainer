@@ -144,12 +144,12 @@ processes=[
     {'Class':'IsolatedSignal','path':['./DY.root','./Zee.root'],
      #Can be a single root file, a list of root file, or even a folder but in a tuple format (folder,fileextension), like ('./samples','.root')
      'xsecwt': 1, #can be a number or a branch name, like 'weight' #Will go into training
-     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)', #selection for background
+     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)', #selection
     },
     {'Class':'NonIsolated','path':['./QCD.root'],
      #Can be a single root file, a list of root file, or even a folder but in a tuple format (folder,fileextension), like ('./samples','.root')
      'xsecwt': 1, #can be a number or a branch name, like 'weight' #Will go into training
-     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)  & (matchedToGenEle==0)', #selection for background
+     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)  & (matchedToGenEle==0)', #selection
     },
 ]
 
