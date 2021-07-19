@@ -1,3 +1,4 @@
+File Edit Options Buffers Tools Help
 # ID-Trainer
 
 > A simple config-based tool for high-energy-physics machine learning tasks.
@@ -21,7 +22,23 @@ Salient features:
 6) Multi-Class training possible
 7) Ability to customize thresholds
 
-### Setting up
+### What will be the output of the trainer:
+
+1) Feature distributions
+2) Statistics in training and testing
+3) ROCs, loss plots, MVA scores
+4) Confusion Matrices
+5) Correlation plots
+6) Trained models (h5 or pkl files)
+
+#### Optional outputs
+
+1) Threshold values of scores for chosen working points
+2) Efficiency vs pT and Efficiency vs eta plots for all classes
+3) Reweighting plots for pT and eta
+4) Comparison of new ID performance with benchmark ID flags
+
+# Setting up
 
 #### Clone
 ```
@@ -54,9 +71,11 @@ The Trainer will read the settings from the config file and run training
 
 Projects where the framework has been helpful
 
-1) Run-3 Ele MVA ID
-2) Close photon analysis
-3) H->eeg analysis
+1) Run-3 Electron MVA ID
+2) Run-3 PF Electron ID
+3) Run-3 PF Photon ID
+4) Close photon analysis
+5) H->eeg analysis
 
 ##########################################
 
@@ -74,8 +93,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 ```
 
 
-
-#### All the Parameters
+# All the Parameters
 
 | Parameters |Type| Description|
 | --------------- | ----------------| ---------------- |
@@ -83,10 +101,10 @@ from tensorflow.keras.callbacks import EarlyStopping
 | `branches` |list of strings| Branches to read (Should be in the input root files). Only these branches can be later used for any purpose. The '\*' is useful for selecting pattern-based branches. In principle one can do ``` branches=["*"] ```, but remember that the data loading time increases, if you select more branches|
 |`SaveDataFrameCSV`|boolean| If True, this will save the data frame as a parquet file and the next time you run the same training with different parameters, it will be much faster|
 |`loadfromsaved`|boolean| If root files and branches are the same as previous training and SaveDataFrameCSV was True, you can assign this as `True`, and data loading time will reduce significantly. Remember that this will use the same output directory as mentioned using `OutputDirName`, so the data frame should be present there|
-|`Classes` | list of strings | Two or more classes possible. For two classes the code will do a binary classification. For more than two classes Can be anything but samples will be later loaded under this scheme. Example: `Classes=['DY','TTBar']` or `Classes=['Class1','Class2','Class3']`. The order is important if you want to make an ID. In case of two classes, the first class has to be Signal of interest. The second has to be background.|
+|`Classes` | list of strings | Two or more classes possible. For two classes the code will do a binary classification. For more than two classes Can be anything but samples will be later loaded under this scheme. Example: `Classes=['DY','TTBar']` or `Classes=['Class1','Class2','Class3']`. The order is important if you want to make an ID. In case of two classes, the first class has to be a Signal of interest. The second has to be a background. In multiclass, it does not matter which order one is using, but it is highly recommended that the first class is signal, if it is known. |
 |`ClassColors`|list of strings|Colors for `Classes` to use in plots. Standard python colors work!|
 |`Tree`| string |Location of the tree inside the root file|
-|`processes`| list of dictionaries| You can add as many process files as you like and assign them to a specific class. For example WZ.root and TTBar.root could be 'Background' class and DY.root could be 'Signal' or both 'Signal and 'background' can come from the same root file. In fact you can have, as an example: 4 classes and 5 root files. The Trainer will take care of it at the backend. Look at the sample  config below to see how processes are added. It is a list of dictionaries, with one example dictionary looking like this ` {'Class':'IsolatedSignal','path':['./DY.root','./Zee.root'], 'xsecwt': 1, 'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)'} ` |
+|`processes`| list of dictionaries| You can add as many process files as you like and assign them to a specific class. For example WZ.root and TTBar.root could be 'Background' class and DY.root could be 'Signal' or both 'Signal and 'background' can come from the same root file. In fact you can have, as an example: 4 classes and 5 root files. The Trainer will take care of it at the backend. Look at the sample config below to see how processes are added. It is a list of dictionaries, with one example dictionary looking like this ` {'Class':'IsolatedSignal','path':['./DY.root','./Zee.root'], 'xsecwt': 1, 'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)'} ` |
 |`MVAs`|list of dictionaries| MVAs to use. You can add as many as you like: MVAtypes XGB and DNN are keywords, so names can be XGB_new, DNN_old etc, but keep XGB and DNN in the names (That is how the framework identifies which algo to run). Look at the sample config below to see how MVAs are added. |
 
 #### Optional Parameters
