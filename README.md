@@ -51,10 +51,14 @@ In principle, you can set this up on your local computer by installing packages 
 Use LCG 97python3 and you will have all the dependencies! (Tested at lxplus and SWAN)
 `source /cvmfs/sft.cern.ch/lcg/views/LCG_97python3/x86_64-centos7-gcc8-opt/setup.sh`
 
-#### Run on CPUs and GPUs
+#### Run on GPUs
 
-The code can also transparently use a GPU, if a GPU card is available. The cvmfs release to use in that case is:
+The code can also transparently use a GPU, if a GPU card is available. Although, all packages need to be setup correctly.
+For GPU in tensorflow, you can use a cvmfs release is available:
 `source /cvmfs/sft.cern.ch/lcg/views/LCG_97py3cu10/x86_64-centos7-gcc7-opt/setup.sh`
+
+For XGBoost, while the code will use it automatically, it needs a GPU compiled XGBoost with CUDA >10.0. This is at the moment not possible with any cvmfs release.
+You can cartainly setup packages locally.
 
 
 ### Running the trainer
