@@ -181,9 +181,11 @@ for i,k in enumerate(Conf.Classes):
 # In[16]:
 
 
-if hasattr(Conf,'modifydf'):
-    if callable(getattr(Conf,'modifydf')):
-        Conf.modifydf(df_final)
+try:
+    Conf.modifydf(df_final)
+    print("Dataframe modification is done using modifydf")
+except:
+    print("Looks fine")
 
 
 # In[17]:
