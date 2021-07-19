@@ -83,29 +83,36 @@ from tensorflow.keras.callbacks import EarlyStopping
 | `branches` |list of strings| Branches to read (Should be in the input root files). Only these branches can be later used for any purpose. The '\*' is useful for selecting pattern-based branches. In principle one can do ``` branches=["*"] ```, but remember that the data loading time increases, if you select more branches|
 |`SaveDataFrameCSV`|boolean| If True, this will save the data frame as a parquet file and the next time you run the same training with different parameters, it will be much faster|
 |`loadfromsaved`|boolean| If root files and branches are the same as previous training and SaveDataFrameCSV was True, you can assign this as `True`, and data loading time will reduce significantly. Remember that this will use the same output directory as mentioned using `OutputDirName`, so the data frame should be present there|
-|`Classes` | list of strings | Two or more classes possible. For two classes the code will do a binary classification. For more than two classes Can be anything but samples will be later loaded under this scheme. |
+|`Classes` | list of strings | Two or more classes possible. For two classes the code will do a binary classification. For more than two classes Can be anything but samples will be later loaded under this scheme. Example: `Classes=['DY','TTBar']` or `Classes=['Class1','Class2','Class3']`. The order is important if you want to make an ID. In case of two classes, the first class has to be Signal of interest. The second has to be background.|
 |`ClassColors`|list of strings|Colors for `Classes` to use in plots. Standard python colors work!|
 |`Tree`| string |Location of the tree inside the root file|
-|`processes`| list of dictionaries| You can add as many process files as you like and assign them to a specific class. For example WZ.root and TTBar.root could be 'Background' class and DY.root could be 'Signal' or both 'Signal and 'background' can come from the same root file. In fact you can have, as an example: 4 classes and 5 root files. The Trainer will take care of it at the backend. Look at the sample  config below to see how processes are added. |
+|`processes`| list of dictionaries| You can add as many process files as you like and assign them to a specific class. For example WZ.root and TTBar.root could be 'Background' class and DY.root could be 'Signal' or both 'Signal and 'background' can come from the same root file. In fact you can have, as an example: 4 classes and 5 root files. The Trainer will take care of it at the backend. Look at the sample  config below to see how processes are added. It is a list of dictionaries, with one example dictionary looking like this ` {'Class':'IsolatedSignal','path':['./DY.root','./Zee.root'], 'xsecwt': 1, 'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)'} ` |
 |`MVAs`|list of dictionaries| MVAs to use. You can add as many as you like: MVAtypes XGB and DNN are keywords, so names can be XGB_new, DNN_old etc, but keep XGB and DNN in the names (That is how the framework identifies which algo to run). Look at the sample config below to see how MVAs are added. |
 
 #### Optional Parameters
 
 | Parameters          |Type| Description| Default value|
 | --------------- | ----------------| ---------------- | ---------------- |
-|`Reweighing`|boolean| This is independent of xsec reweighing (this reweighing will be done after taking into account xsec weight of multiple samples). Even if this is 'False', xsec reweighting will always be done. To switch off xsec reweighting, you can just assign the xsec weight is `1`|
-|`ptbins`,`etabins`|lists of numbers| $p_T$ and $\eta$ bins of interest (will be used for robustness studies: function coming soon) and will also be used for 2D $p_T$-$\eta$ reweighing if the `Reweighing` option is `True`|
-|`ptwtvar`,`etawtvar`|strings| names of $p_T$ and $\eta$ branches|
-|`WhichClassToReweightTo`|string|  2D $p_T$-$\eta$ spectrum of all other classes will be reweighted to this class|
-|`OverlayWP`|list of strings| Working Point Flags to compare to (Should be in your ntuple and should also be read in branches)|
-|`OverlayWPColors`|list of strings| Working Point Flags colors in plot|
-|`SigEffWPs`| list of strings | To print thresholds of mva scores for corresponding signal efficiency, example `["80%","90%"]` (Add as many as you would like) Currently not supported for multi-class classification but fully supported for Binary-classification |
-|`testsize`|float| In fraction, how much data to use for testing (0.3 means 30%)| 0.2
+|`Reweighing`|boolean| This is independent of xsec reweighing (this reweighing will be done after taking into account xsec weight of multiple samples). Even if this is 'False', xsec reweighting will always be done. To switch off xsec reweighting, you can just assign the xsec weight is `1`| False |
+|`ptbins`,`etabins`|lists of numbers| $p_T$ and $\eta$ bins of interest (will be used for robustness studies: function coming soon) and will also be used for 2D $p_T$-$\eta$ reweighing if the `Reweighing` option is `True`|Not activated until Reweighing==True |
+|`ptwtvar`,`etawtvar`|strings| names of $p_T$ and $\eta$ branches|Not activated until Reweighing==True|
+|`WhichClassToReweightTo`|string|  2D $p_T$-$\eta$ spectrum of all other classes will be reweighted to this class|Not activated until Reweighing==True|
+|`OverlayWP`|list of strings| Working Point Flags to compare to (Should be in your ntuple and should also be read in branches)|empty list|
+|`OverlayWPColors`|list of strings| Working Point Flags colors in plot|empty list|
+|`SigEffWPs`| list of strings | To print thresholds of mva scores for corresponding signal efficiency, example `["80%","90%"]` (Add as many as you would like) |empty list|
+|`testsize`|float| In fraction, how much data to use for testing (0.3 means 30%)| 0.2|
 |`flatten`       |boolean| For NanoAOD and other un-flattened trees, you can assign this as `True` to flatten branches with variable length for each event (Event level -> Object level)| False |
 | `Debug`         |boolean| If True, only a small subset of events/objects are used for either Signal or background. Useful for quick debugging of code| False |
 |`RandomState`|integer |Choose the same number every time for reproducibility| 42|
 |`MVAlogplot`|boolean| If true, MVA outputs are plotted in log scale| False|
 |`Multicore`|boolean| If True all CPU cores available are used XGB | True|
+
+#### How to add variables? or modify the ones that are in tree
+
+| Function         |Type| Description| Default value|
+| --------------- | ----------------| ---------------- | ---------------- |
+|`modifydf`|function| In your config, you can add a function with this exact name `modifydf` which accepts a pandas dataframe and manipulates it and then returns 0. Using this you can add new variables or modify already present variables. Example: `def modifydf(df): df['A']=df[X]+df[Y]; return 0;` This will add a new branch named 'A'.| Not activated until defined|
+
 
 ### A sample config for running XGboost and DNN together
 
@@ -137,12 +144,12 @@ processes=[
     {'Class':'IsolatedSignal','path':['./DY.root','./Zee.root'],
      #Can be a single root file, a list of root file, or even a folder but in a tuple format (folder,fileextension), like ('./samples','.root')
      'xsecwt': 1, #can be a number or a branch name, like 'weight' #Will go into training
-     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)', #selection for background
+     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5) & (matchedToGenEle==1)', #selection
     },
     {'Class':'NonIsolated','path':['./QCD.root'],
      #Can be a single root file, a list of root file, or even a folder but in a tuple format (folder,fileextension), like ('./samples','.root')
      'xsecwt': 1, #can be a number or a branch name, like 'weight' #Will go into training
-     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)  & (matchedToGenEle==0)', #selection for background
+     'selection':'(ele_pt > 5) & (abs(scl_eta) < 1.442) & (abs(scl_eta) < 2.5)  & (matchedToGenEle==0)', #selection
     },
 ]
 
