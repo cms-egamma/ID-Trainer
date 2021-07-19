@@ -111,7 +111,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 | Function         |Type| Description| Default value|
 | --------------- | ----------------| ---------------- | ---------------- |
-|`modifydf`|function| In your config, you can add a function with this exact name `modifydf` which accepts a pandas dataframe and manuplates it and then returns 0. Using this you can add new variables or modofy already present variables. Example: `def modifydf(df): df['A']=df[X]+df[Y]; return 0;` This will add a new branch named 'A'.| Not activated until defined|
+|`modifydf`|function| In your config, you can add a function with this exact name `modifydf` which accepts a pandas dataframe and manipulates it and then returns 0. Using this you can add new variables or modofy already present variables. Example: `def modifydf(df): df['A']=df[X]+df[Y]; return 0;` This will add a new branch named 'A'.| Not activated until defined|
 
 
 ### A sample config for running XGboost and DNN together
