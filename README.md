@@ -99,13 +99,20 @@ from tensorflow.keras.callbacks import EarlyStopping
 |`WhichClassToReweightTo`|string|  2D $p_T$-$\eta$ spectrum of all other classes will be reweighted to this class|Not activated until Reweighing==True|
 |`OverlayWP`|list of strings| Working Point Flags to compare to (Should be in your ntuple and should also be read in branches)|empty list|
 |`OverlayWPColors`|list of strings| Working Point Flags colors in plot|empty list|
-|`SigEffWPs`| list of strings | To print thresholds of mva scores for corresponding signal efficiency, example `["80%","90%"]` (Add as many as you would like) Currently not supported for multi-class classification but fully supported for Binary-classification |empty list|
+|`SigEffWPs`| list of strings | To print thresholds of mva scores for corresponding signal efficiency, example `["80%","90%"]` (Add as many as you would like) |empty list|
 |`testsize`|float| In fraction, how much data to use for testing (0.3 means 30%)| 0.2|
 |`flatten`       |boolean| For NanoAOD and other un-flattened trees, you can assign this as `True` to flatten branches with variable length for each event (Event level -> Object level)| False |
 | `Debug`         |boolean| If True, only a small subset of events/objects are used for either Signal or background. Useful for quick debugging of code| False |
 |`RandomState`|integer |Choose the same number every time for reproducibility| 42|
 |`MVAlogplot`|boolean| If true, MVA outputs are plotted in log scale| False|
 |`Multicore`|boolean| If True all CPU cores available are used XGB | True|
+
+#### How to add variables? or modify the ones that are in tree
+
+| Function         |Type| Description| Default value|
+| --------------- | ----------------| ---------------- | ---------------- |
+|`modifydf`|function| In your config, you can add a function with this exact name `modifydf` which accepts a pandas dataframe and manuplates it and then returns 0. Using this you can add new variables or modofy already present variables. Example: `def modifydf(df): df['A']=df[X]+df[Y]; return 0;` This will add a new branch named 'A'.| Not activated until defined|
+
 
 ### A sample config for running XGboost and DNN together
 
