@@ -1,4 +1,3 @@
-File Edit Options Buffers Tools Help
 # ID-Trainer
 
 > A simple config-based tool for high-energy-physics machine learning tasks.
