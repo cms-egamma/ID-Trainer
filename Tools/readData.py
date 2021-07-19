@@ -9,7 +9,7 @@ import dask.dataframe as dd
 import gc
 
 def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=False):
-    def get_df(Class,file, xsecwt, selection, treepath=None,branches=['ele*']):
+    def get_df(Class,file, xsecwt, selection, treepath=None,branches=['ele*'],multfactor=1):
         tree = uproot.open(file)[treepath]
         if debug:
             ddd=tree.pandas.df(branches=branches,flatten=flatten,entrystop=1000).query(selection)
@@ -17,6 +17,8 @@ def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=
             ddd=tree.pandas.df(branches=branches,flatten=flatten).query(selection)
         #ddd["Category"]=Category
         ddd["Class"]=Class
+        if type(xsecwt) == type(('xsec',2)):
+            ddd["xsecwt"]=ddd[xsecwt[0]]*xsecwt[1]
         if type(xsecwt) == type("hello"):
             ddd["xsecwt"]=ddd[xsecwt]
         elif type(xsecwt) == type(0.1):
