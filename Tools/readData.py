@@ -9,7 +9,7 @@ import dask.dataframe as dd
 import gc
 
 def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=False):
-    def get_df(Class,file, xsecwt, selection, treepath=None,branches=['ele*']):
+    def get_df(Class,file, xsecwt, selection, treepath=None,branches=['ele*'],multfactor=1):
         tree = uproot.open(file)[treepath]
         if debug:
             ddd=tree.pandas.df(branches=branches,flatten=flatten,entrystop=1000).query(selection)
@@ -17,14 +17,16 @@ def daskframe_from_rootfiles(processes, treepath,branches,flatten='False',debug=
             ddd=tree.pandas.df(branches=branches,flatten=flatten).query(selection)
         #ddd["Category"]=Category
         ddd["Class"]=Class
-        if type(xsecwt) == type("hello"):
+        if type(xsecwt) == type(('xsec',2)):
+            ddd["xsecwt"]=ddd[xsecwt[0]]*xsecwt[1]
+        elif type(xsecwt) == type("hello"):
             ddd["xsecwt"]=ddd[xsecwt]
         elif type(xsecwt) == type(0.1):
             ddd["xsecwt"]=xsecwt
         elif type(xsecwt) == type(1):
             ddd["xsecwt"]=xsecwt
         else:
-            print("CAUTION: xsecwt should be a branch name or a number... Assigning the weight as 1")        
+            print("CAUTION: xsecwt should be a branch name or a number or a tuple... Assigning the weight as 1")        
         print(file)
         return ddd
 

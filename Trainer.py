@@ -181,9 +181,11 @@ for i,k in enumerate(Conf.Classes):
 # In[16]:
 
 
-if hasattr(Conf,'modifydf'):
-    if callable(getattr(Conf,'modifydf')):
-        Conf.modifydf(df_final)
+try:
+    Conf.modifydf(df_final)
+    print("Dataframe modification is done using modifydf")
+except:
+    print("Looks fine")
 
 
 # In[17]:
@@ -490,6 +492,10 @@ for MVA in Conf.MVAs:
             df_final.loc[TestIndices,MVA["MVAtype"]+"_pred"]=np.sum([modelDNN.predict(X_test,batch_size=5000)[:, 0],modelDNN.predict(X_test,batch_size=5000)[:, 1]],axis=0)
             
         ###############DNN#######################################
+        
+    plotwt_train=np.asarray(df_final.loc[TrainIndices,'xsecwt'])
+    plotwt_test=np.asarray(df_final.loc[TestIndices,'xsecwt'])
+    
     from sklearn.metrics import confusion_matrix
     fig, axes = plt.subplots(1, 1, figsize=(len(Conf.Classes)*2, len(Conf.Classes)*2))
     cm = confusion_matrix(Y_test.argmax(axis=1), y_test_pred.argmax(axis=1))
@@ -518,10 +524,10 @@ for MVA in Conf.MVAs:
             ax=axes[i]
             for k in range(n_classes):
                 axMVA.hist(y_test_pred[:, i][Y_test[:, k]==1],bins=np.linspace(0, 1, 21),label=Conf.Classes[k]+'_test',
-                           weights=Wt_test[Y_test[:, k]==1]/np.sum(Wt_test[Y_test[:, k]==1]),
+                           weights=plotwt_test[Y_test[:, k]==1]/np.sum(plotwt_test[Y_test[:, k]==1]),
                            histtype='step',linewidth=2,color=Conf.ClassColors[k])
                 axMVA.hist(y_train_pred[:, i][Y_train[:, k]==1],bins=np.linspace(0, 1, 21),label=Conf.Classes[k]+'_train',
-                           weights=Wt_train[Y_train[:, k]==1]/np.sum(Wt_train[Y_train[:, k]==1]),
+                           weights=plotwt_train[Y_train[:, k]==1]/np.sum(plotwt_train[Y_train[:, k]==1]),
                            histtype='stepfilled',alpha=0.3,linewidth=2,color=Conf.ClassColors[k])
             axMVA.set_title(MVA["MVAtype"]+' Score: Node '+str(i+1),fontsize=10)
             axMVA.set_xlabel('Score',fontsize=10)
@@ -530,8 +536,8 @@ for MVA in Conf.MVAs:
             if Conf.MVAlogplot:
                 axMVA.set_xscale('log')
 
-            fpr, tpr, th = roc_curve(Y_test[:, i], y_test_pred[:, i])
-            fpr_tr, tpr_tr, th_tr = roc_curve(Y_train[:, i], y_train_pred[:, i])
+            fpr, tpr, th = roc_curve(Y_test[:, i], y_test_pred[:, i],sample_weight=plotwt_test)
+            fpr_tr, tpr_tr, th_tr = roc_curve(Y_train[:, i], y_train_pred[:, i],sample_weight=plotwt_train)
             mask = tpr > 0.0
             fpr, tpr = fpr[mask], tpr[mask]
 
@@ -582,8 +588,8 @@ if len(Conf.Classes)<=2:
             plot_single_roc_point(df_final.query('TrainDataset==0'), var=OverlayWpi, ax=axes, color=color, marker='o', markersize=8, label=OverlayWpi+" Test dataset", cat=cat,Wt=weight)
     if len(Conf.MVAs)>0:
         for MVAi in Conf.MVAs:
-            plot_roc_curve(df_final.query('TrainDataset==0'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='--', label=MVAi["Label"]+' Testing',cat=cat,Wt=weight)
-            plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt=weight)
+            plot_roc_curve(df_final.query('TrainDataset==0'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='--', label=MVAi["Label"]+' Testing',cat=cat,Wt='xsecwt')
+            plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt='xsecwt')
         axes.set_ylabel("Background efficiency (%)")
         axes.set_xlabel("Signal efficiency  (%)")
         axes.set_title("Final")
