@@ -48,8 +48,8 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="Configs.MultiClassClassification_with_XGBoost_and_DNN"
-    exec("import "+TrainConfig+" as Conf")
+    TrainConfig="Configs/MultiClassClassification_with_XGBoost_and_DNN"
+    exec("import "+TrainConfig.replace("/", ".")+" as Conf")
 else:
     TrainConfig=sys.argv[1]
     print("Importing settings from "+ TrainConfig.replace("/", "."))
@@ -70,6 +70,7 @@ if not hasattr(Conf, 'flatten'): Conf.flatten=False
 if not hasattr(Conf, 'testsize'): Conf.testsize=0.2
 if not hasattr(Conf, 'Debug'): Conf.Debug=False
 if not hasattr(Conf, 'Thresholds'):Conf.Thresholds=False
+if not hasattr(Conf, 'Spectators'):Conf.Spectators=[]
 
 
 # In[6]:
@@ -247,6 +248,12 @@ plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.pdf")
 plt.savefig(Conf.OutputDirName+"/TotalStat_TrainANDTest.png")
 
 
+# In[ ]:
+
+
+
+
+
 # In[23]:
 
 
@@ -274,9 +281,19 @@ if hasattr(Conf, 'Reweighing') and Conf.Reweighing=='True':
                                                   pt=Conf.ptwtvar,eta=Conf.etawtvar,
                                                   SumWeightCol='xsecwt',NewWeightCol=weight,
                                                   cand=ReweightClass,Classes=Conf.Classes)
+    
 
 
 # In[24]:
+
+
+######Spectators
+if len(Conf.Spectators)>0:
+    MakeSpectatorPlots(df_final,Conf.Spectators,Conf.SpectatorBins,Set="Train",OutputDirName=Conf.OutputDirName,label=Conf.Classes,log=Conf.MVAlogplot)
+    MakeSpectatorPlots(df_final,Conf.Spectators,Conf.SpectatorBins,Set="Test",OutputDirName=Conf.OutputDirName,label=Conf.Classes,log=Conf.MVAlogplot)
+
+
+# In[25]:
 
 
 import numpy as np
@@ -314,7 +331,7 @@ if any(hasattr(Conf, attr) for attr in ['Reweighing', 'ptbins','ptwtvar','etawtv
     fig.savefig(Conf.OutputDirName+"/eta_rwt.pdf")
 
 
-# In[25]:
+# In[26]:
 
 
 def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
@@ -328,7 +345,7 @@ def PrepDataset(df_final,TrainIndices,TestIndices,features,cat,weight):
     return np.asarray(X_train), np.asarray(Y_train), np.asarray(Wt_train), np.asarray(X_test), np.asarray(Y_test), np.asarray(Wt_test)
 
 
-# In[26]:
+# In[27]:
 
 
 import pickle
@@ -348,7 +365,7 @@ def corre(df,Classes=[''],MVA={}):
                 fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+C+"_CORRELATION_"+k+".png")
 
 
-# In[27]:
+# In[28]:
 
 
 from tensorflow.keras.utils import to_categorical
@@ -356,9 +373,9 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.utils import to_categorical
 for MVA in Conf.MVAs:
     corre(df_final,Conf.Classes,MVA)
-    MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
-    MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
-    MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes)
+    MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Train",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes,log=Conf.MVAlogplot)
+    MakeFeaturePlots(df_final,MVA["features"],MVA["feature_bins"],Set="Test",MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes,log=Conf.MVAlogplot)
+    MakeFeaturePlotsComb(df_final,MVA["features"],MVA["feature_bins"],MVA=MVA["MVAtype"],OutputDirName=Conf.OutputDirName,label=Conf.Classes,log=Conf.MVAlogplot)
     
     if 'XGB' in MVA["MVAtype"]:
         ###############XGB#######################################
@@ -576,7 +593,7 @@ for MVA in Conf.MVAs:
 
 
 
-# In[28]:
+# In[29]:
 
 
 if len(Conf.Classes)<=2:
@@ -603,7 +620,7 @@ if len(Conf.Classes)<=2:
     plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[29]:
+# In[30]:
 
 
 def eff(group_df,var,cat,catvalue):
@@ -670,7 +687,7 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     figMVAComp.savefig(plot_dir+plotname)
 
 
-# In[30]:
+# In[31]:
 
 
 if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
@@ -692,6 +709,7 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
         
         if len(Conf.Classes) > 2:
             print("Assuming that first two classes are signal: To make any change, please change hardcoded discriminator")
+            print("This does not affect the ROC or scores")
             mydftrain=EB_train.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
             mydftest=EB_test.query(cat+"==1 | "+cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
             
@@ -700,6 +718,7 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
             
         if len(Conf.Classes) < 3:
             print("Assuming that first class is signal: To make any change, please change hardcoded discriminator")
+            print("This does not affect the ROC or scores")
             mydftrain=EB_train.query(cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
             mydftest=EB_test.query(cat+"==0")[[MVA["MVAtype"]+"_pred"]].quantile(SigEffWPs)
             
@@ -733,7 +752,7 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
                 EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
 
 
-# In[ ]:
+# In[32]:
 
 
 if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
@@ -759,7 +778,7 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[ ]:
+# In[33]:
 
 
 

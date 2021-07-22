@@ -57,30 +57,47 @@ def pngtopdf(ListPattern=[],Save="mydoc.pdf"):
         L[i]=rgb
     L[0].save(Save, "PDF" ,resolution=100.0, save_all=True, append_images=L[1:])
 
-def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat='Category',label=[""],weight="NewWt"):
+def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",OutputDirName='Output',cat='Category',label=[""],weight="NewWt",log=False):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making "+Set+" dataset feature plots")
     for m in range(len(features)):
+        print(f'Feature {m} is {features[m]}')
         for i,group_df in df_final[df_final['Dataset'] == Set].groupby(cat):
-            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=1,label=label[i], ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
+            group_df[features[m]].hist(histtype='step', bins=feature_bins[m], alpha=1,label=label[i], ax=axes[m], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
-        axes[m-1].legend(loc='upper right')
-        axes[m-1].set_xlabel(features[m-1])
-        axes[m-1].set_yscale("log")
-        axes[m-1].set_title(features[m-1]+" ("+Set+" Dataset)")
+        axes[m].legend(loc='upper right')
+        axes[m].set_xlabel(features[m])
+        if log:
+            axes[m].set_yscale("log")
+        axes[m].set_title(features[m]+" ("+Set+" Dataset)")
     plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots_"+Set+".pdf")
+    
+def MakeSpectatorPlots(df_final,features,feature_bins,Set="Train",OutputDirName='Output',cat='Category',label=[""],weight="NewWt",log=False):
+    fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
+    prGreen("Making "+Set+" dataset spectator plots")
+    for m in range(len(features)):
+        for i,group_df in df_final[df_final['Dataset'] == Set].groupby(cat):
+            group_df[features[m]].hist(histtype='step', bins=feature_bins[m], alpha=1,label=label[i], ax=axes[m], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
+            #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
+        axes[m].legend(loc='upper right')
+        axes[m].set_xlabel(features[m])
+        if log:
+            axes[m].set_yscale("log")
+        axes[m].set_title(features[m]+" ("+Set+" Dataset)")
+    plt.savefig(OutputDirName+"/spectatorplots_"+Set+".pdf")
 
-def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="Category",label=[""],weight="NewWt"):
+def MakeFeaturePlotsComb(df_final,features,feature_bins,MVA="XGB_1",OutputDirName='Output',cat="Category",label=[""],weight="NewWt",log=False):
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making Combined"+" dataset feature plots")
     for m in range(len(features)):
         for i,group_df in df_final[df_final['Dataset'] == "Train"].groupby(cat):
-            group_df[features[m-1]].hist(histtype='stepfilled', bins=feature_bins[m-1], alpha=0.3,label=label[i]+"_Train", ax=axes[m-1], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
+            group_df[features[m]].hist(histtype='stepfilled', bins=feature_bins[m], alpha=0.3,label=label[i]+"_Train", ax=axes[m], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
         for i,group_df in df_final[df_final['Dataset'] == "Test"].groupby(cat):
-            group_df[features[m-1]].hist(histtype='step', bins=feature_bins[m-1], alpha=1,label=label[i]+"_Test", ax=axes[m-1], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
+            group_df[features[m]].hist(histtype='step', bins=feature_bins[m], alpha=1,label=label[i]+"_Test", ax=axes[m], density=False, ls='--', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            
-        axes[m-1].legend(loc='upper right')
-        axes[m-1].set_xlabel(features[m-1])
-        axes[m-1].set_yscale("log")
-        axes[m-1].set_title(features[m-1])
+        axes[m].legend(loc='upper right')
+        axes[m].set_xlabel(features[m])
+        if log:
+            axes[m].set_yscale("log")
+        axes[m].set_title(features[m])
     plt.savefig(OutputDirName+"/"+MVA+"/"+MVA+"_"+"featureplots"+".pdf")
