@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# ## Some imports
+
 # In[1]:
 
 
@@ -28,6 +30,8 @@ except AttributeError:
     tf.compat.v1.disable_eager_execution()
 
 
+# ## Check if notebook or script and import the right config
+
 # In[3]:
 
 
@@ -48,7 +52,7 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="Configs/MultiClassClassification_with_XGBoost_and_DNN"
+    TrainConfig="PFPhoton"
     exec("import "+TrainConfig.replace("/", ".")+" as Conf")
 else:
     TrainConfig=sys.argv[1]
@@ -58,12 +62,15 @@ else:
     exec("import "+importConfig+" as Conf")
 
 
+# ## Set some default options
+
 # In[5]:
 
 
 def modify(df):
     return 0
 if not hasattr(Conf, 'MVAlogplot'): Conf.MVAlogplot=False
+if not hasattr(Conf, 'ROClogplot'): Conf.ROClogplot=False
 if not hasattr(Conf, 'Multicore'): Conf.Multicore=False
 if not hasattr(Conf, 'RandomState'): Conf.RandomState=42
 if not hasattr(Conf, 'flatten'): Conf.flatten=False
@@ -71,7 +78,12 @@ if not hasattr(Conf, 'testsize'): Conf.testsize=0.2
 if not hasattr(Conf, 'Debug'): Conf.Debug=False
 if not hasattr(Conf, 'Thresholds'):Conf.Thresholds=False
 if not hasattr(Conf, 'Spectators'):Conf.Spectators=[]
+if not hasattr(Conf, 'CMSLabel'):Conf.CMSLabel=["CMS Preliminary","13 TeV"]
+    
+print(Conf.CMSLabel)
 
+
+# ## Set same random state for everything
 
 # In[6]:
 
@@ -80,6 +92,8 @@ tf.compat.v1.random.set_random_seed(Conf.RandomState)
 random.seed(Conf.RandomState)
 np.random.seed(Conf.RandomState)
 
+
+# ## Get uproot (uproot3 needed)
 
 # In[7]:
 
@@ -365,7 +379,7 @@ def corre(df,Classes=[''],MVA={}):
                 fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+C+"_CORRELATION_"+k+".png")
 
 
-# In[28]:
+# In[35]:
 
 
 from tensorflow.keras.utils import to_categorical
@@ -408,8 +422,13 @@ for MVA in Conf.MVAs:
         prGreen("XGB Best Parameters")
         #json.dumps(search.best_params_)
         prGreen(str(search.best_params_))
+        #sorted_idx = list(cv.best_estimator_.feature_importances_.argsort())
+        #prGreen(sorted_idx)
+        fig, ax = plt.subplots()
+        ax.barh(MVA["features"],cv.best_estimator_.feature_importances_)
+        ax.set_xlabel("Xgboost Feature Importance")
+        fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"_Importance_.png")
         results = cv.best_estimator_.evals_result()
-        print(results)
         if len(Conf.Classes)<3:
             epochs = len(results['validation_0']['error'])
         else:
@@ -425,7 +444,7 @@ for MVA in Conf.MVAs:
         ax.legend()
         ax.set_ylabel('error')
         ax.set_xlabel('epochs')
-        ax.set_title(MVA["MVAtype"]+' XGBoost Error')
+        ax.set_title(MVA["Label"]+' XGBoost Error')
         fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"_error_.png")
         print("All XGBoost parameters")
         print(cv.get_params())
@@ -489,7 +508,7 @@ for MVA in Conf.MVAs:
         axes.plot(epoch_count, test_loss)
         axes.legend(['Training Loss', 'Test Loss'])
         axes.set_xlabel('Epoch')
-        axes.set_ylabel('Loss')
+        axes.set_ylabel(MVA["Label"]+': Loss')
         plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"Loss.pdf")
         plt.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"Loss.png")
         
@@ -546,12 +565,16 @@ for MVA in Conf.MVAs:
                 axMVA.hist(y_train_pred[:, i][Y_train[:, k]==1],bins=np.linspace(0, 1, 21),label=Conf.Classes[k]+'_train',
                            weights=plotwt_train[Y_train[:, k]==1]/np.sum(plotwt_train[Y_train[:, k]==1]),
                            histtype='stepfilled',alpha=0.3,linewidth=2,color=Conf.ClassColors[k])
-            axMVA.set_title(MVA["MVAtype"]+' Score: Node '+str(i+1),fontsize=10)
+            #axMVA.set_title(MVA["Label"]+' Score: Node '+str(i+1),fontsize=10)
             axMVA.set_xlabel('Score',fontsize=10)
+            #axMVA.set_ylim(0,1.3)
             axMVA.set_ylabel('Fraction of events',fontsize=10)
-            axMVA.legend(loc="upper right",fontsize=10)
+            axMVA.legend(title=MVA["Label"]+' Score: Node '+str(i+1), loc="best",fontsize=10)
+            axMVA.text(0, 1, str(Conf.CMSLabel[0]), horizontalalignment = 'left', verticalalignment = 'bottom', transform=axMVA.transAxes, fontsize = 12)#, fontweight = 'bold')
+            #ax.text(0.14, 1, "$\it{Simulation}$", horizontalalignment = 'left', verticalalignment = 'bottom', transform = ax.transAxes, fontsize = 13)
+            axMVA.text(1, 1, Conf.CMSLabel[1], horizontalalignment = 'right', verticalalignment = 'bottom', transform = axMVA.transAxes, fontsize = 12)
             if Conf.MVAlogplot:
-                axMVA.set_xscale('log')
+                axMVA.set_yscale('log')
 
             fpr, tpr, th = roc_curve(Y_test[:, i], y_test_pred[:, i],sample_weight=plotwt_test)
             fpr_tr, tpr_tr, th_tr = roc_curve(Y_train[:, i], y_train_pred[:, i],sample_weight=plotwt_train)
@@ -566,13 +589,17 @@ for MVA in Conf.MVAs:
             
             ax.plot(tpr*100, fpr*100, label='ROC curve test (area = %0.2f)' % roc_auc,linewidth=1)
             ax.plot(tpr_tr*100, fpr_tr*100, label='ROC curve train (area = %0.2f)' % roc_auc_tr,linewidth=1)
+            ax.text(0, 1, str(Conf.CMSLabel[0]), horizontalalignment = 'left', verticalalignment = 'bottom', transform=ax.transAxes, fontsize = 12)#, fontweight = 'bold')
+            #ax.text(0.14, 1, "$\it{Simulation}$", horizontalalignment = 'left', verticalalignment = 'bottom', transform = ax.transAxes, fontsize = 13)
+            ax.text(1, 1, Conf.CMSLabel[1], horizontalalignment = 'right', verticalalignment = 'bottom', transform = ax.transAxes, fontsize = 12)
+            if Conf.ROClogplot: ax.set_yscale("log")
             #plt.plot([0, 1], [0, 1], 'k--')
             #ax.set_xlim([0.8, 1.0])
             #ax.set_ylim([0.0, 1.05])
             ax.set_xlabel('Signal efficiency (%)',fontsize=10)
             ax.set_ylabel('Background efficiency (%)',fontsize=10)
-            ax.set_title(MVA["MVAtype"]+' ROC: Node '+str(i+1),fontsize=10)
-            ax.legend(loc="upper left",fontsize=10)
+            #ax.set_title(MVA["Label"]+' ROC: Node '+str(i+1),fontsize=10)
+            ax.legend(title=MVA["Label"]+' ROC: Node '+str(i+1),loc="best",fontsize=10)
     fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"ROC.pdf")
     fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"ROC.png")
     figMVA.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"MVA.pdf")
@@ -609,15 +636,19 @@ if len(Conf.Classes)<=2:
             plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt='xsecwt')
         axes.set_ylabel("Background efficiency (%)")
         axes.set_xlabel("Signal efficiency  (%)")
-        axes.set_title("Final")
+        axes.text(0, 1, str(Conf.CMSLabel[0]), horizontalalignment = 'left', verticalalignment = 'bottom', transform=axes.transAxes, fontsize = 12)#, fontweight = 'bold')
+        #ax.text(0.14, 1, "$\it{Simulation}$", horizontalalignment = 'left', verticalalignment = 'bottom', transform = ax.transAxes, fontsize = 13)
+        axes.text(1, 1, Conf.CMSLabel[1], horizontalalignment = 'right', verticalalignment = 'bottom', transform = axes.transAxes, fontsize = 12)
         axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
                   horizontalalignment='center',
                   verticalalignment='center',
                   rotation='vertical',
                   transform=axes.transAxes)
-        axes.set_yscale("log")
-    plt.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
-    plt.savefig(Conf.OutputDirName+"/ROCFinal.png")
+        axes.grid(color='gray', linestyle='--', linewidth=0.5)
+        if Conf.ROClogplot:
+            axes.set_yscale("log")
+    fig.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
+    fig.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
 # In[30]:
@@ -684,7 +715,8 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     ax.grid(True)
     #ax.legend(loc='best',ncol=2,bbox_to_anchor=(0., 1.1, 1., 0.2),fontsize=8)
     ax.legend(loc='best',ncol=2,fontsize=10)
-    figMVAComp.savefig(plot_dir+plotname)
+    figMVAComp.savefig(plot_dir+plotname+".pdf")
+    figMVAComp.savefig(plot_dir+plotname+".png")
 
 
 # In[31]:
@@ -740,16 +772,16 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
         Wps=Conf.OverlayWP
 
         for variable,xaxislabel,binn in zip(variables,xaxislabels,bins):
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[0]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[0]+"_"+variable+"="+str(mydftrain.iat[0,0])+".pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass1",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[1]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable+"="+str(mydftrain.iat[1,0])+".pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[0]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[0]+"_"+variable,df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass1",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[1]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable,df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
             for Wp in Wps:
-                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+"_.pdf",df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable,df=EB_train,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Train_",Classes=Conf.Classes,Colors=Conf.ClassColors)
 
 
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[0]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[0]+"_"+variable+"="+str(mydftest.iat[0,0])+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
-            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass1",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[1]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable+"="+str(mydftest.iat[1,0])+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[0]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[0]+"_"+variable,df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+            EffTrend(cat=cat,var=MVA["MVAtype"]+"_predpass1",groupbyvar=variable,ptbins=binn,label=xaxislabel,title=f"At {Conf.SigEffWPs[1]} overall signal efficiency",plotname="New_MultiClass_ID_Val_"+Conf.SigEffWPs[1]+"_"+variable,df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
             for Wp in Wps:
-                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable+".pdf",df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
+                EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable,df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
 
 
 # In[32]:

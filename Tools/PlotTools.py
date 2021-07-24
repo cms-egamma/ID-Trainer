@@ -21,7 +21,7 @@ def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed',
         ax.set_yscale("log", nonposy='clip')
     ax.legend(loc='best')
 
-def plot_roc_curve(df, score_column, tpr_threshold=0, ax=None, color=None, linestyle='-', label=None,cat="Matchlabel",Wt="Wt"):
+def plot_roc_curve(df, score_column, tpr_threshold=0, ax=None, color=None, linestyle='-', label=None,cat="Matchlabel",Wt="Wt",LeftLabel="CMS Preliminary"):
     from sklearn import metrics
     if ax is None: ax = plt.gca()
     if label is None: label = score_column
@@ -30,7 +30,7 @@ def plot_roc_curve(df, score_column, tpr_threshold=0, ax=None, color=None, lines
     fpr, tpr = fpr[mask], tpr[mask]
     auc=metrics.auc(fpr, tpr)
     label=label+' auc='+str(round(auc*100,1))+'%'
-    ax.plot(tpr*100, fpr*100, label=label, color=color, linestyle=linestyle,linewidth=1,alpha=0.7)
+    ax.plot(tpr*100, (fpr)*100, label=label, color=color, linestyle=linestyle,linewidth=1,alpha=0.7)
     ax.legend(loc='best')
     return auc
 
@@ -61,7 +61,7 @@ def MakeFeaturePlots(df_final,features,feature_bins,Set="Train",MVA="XGB_1",Outp
     fig, axes = plt.subplots(1, len(features), figsize=(len(features)*5, 5))
     prGreen("Making "+Set+" dataset feature plots")
     for m in range(len(features)):
-        print(f'Feature {m} is {features[m]}')
+        #print(f'Feature {m} is {features[m]}')
         for i,group_df in df_final[df_final['Dataset'] == Set].groupby(cat):
             group_df[features[m]].hist(histtype='step', bins=feature_bins[m], alpha=1,label=label[i], ax=axes[m], density=False, ls='-', weights =group_df[weight]/group_df[weight].sum(),linewidth=1)
             #df_new = pd.concat([group_df, df_new],ignore_index=True, sort=False)                                                                                            

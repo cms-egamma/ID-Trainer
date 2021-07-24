@@ -54,11 +54,11 @@ Use LCG 97python3 and you will have all the dependencies! (Tested at lxplus and 
 #### Run on GPUs
 
 The code can also transparently use a GPU, if a GPU card is available. Although, all packages need to be setup correctly.
-For GPU in tensorflow, you can use a cvmfs release is available:
+For GPU in tensorflow, you can use the LCG_97py3cu10 cvmfs release:
 `source /cvmfs/sft.cern.ch/lcg/views/LCG_97py3cu10/x86_64-centos7-gcc7-opt/setup.sh`
 
 For XGBoost, while the code will use it automatically, it needs a GPU compiled XGBoost with CUDA >10.0. This is at the moment not possible with any cvmfs release.
-You can cartainly setup packages locally.
+You can certainly setup packages locally.
 
 
 ### Running the trainer
@@ -114,18 +114,21 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 | Parameters          |Type| Description| Default value|
 | --------------- | ----------------| ---------------- | ---------------- |
+|Spectators|list of features|Spectator variables which are plotted but not used for training|empty|
+|SpectatorBins|list of binnings|Binning scheme for spectator variables which are plotted but not used for training|empty|
 |`Reweighing`|boolean| This is independent of xsec reweighing (this reweighing will be done after taking into account xsec weight of multiple samples). Even if this is 'False', xsec reweighting will always be done. To switch off xsec reweighting, you can just assign the xsec weight is `1`| False |
 |`ptbins`,`etabins`|lists of numbers| $p_T$ and $\eta$ bins of interest (will be used for robustness studies: function coming soon) and will also be used for 2D $p_T$-$\eta$ reweighing if the `Reweighing` option is `True`|Not activated until Reweighing==True |
 |`ptwtvar`,`etawtvar`|strings| names of $p_T$ and $\eta$ branches|Not activated until Reweighing==True|
 |`WhichClassToReweightTo`|string|  2D $p_T$-$\eta$ spectrum of all other classes will be reweighted to this class|Not activated until Reweighing==True|
 |`OverlayWP`|list of strings| Working Point Flags to compare to (Should be in your ntuple and should also be read in branches)|empty list|
-|`OverlayWPColors`|list of strings| Working Point Flags colors in plot|empty list|
+|`OverlayWPColors`|list of strings| Working Point Flags colors in plot (Usual hex-colors accepted)|empty list|
 |`SigEffWPs`| list of strings | To print thresholds of mva scores for corresponding signal efficiency, example `["80%","90%"]` (Add as many as you would like) |empty list|
 |`testsize`|float| In fraction, how much data to use for testing (0.3 means 30%)| 0.2|
 |`flatten`       |boolean| For NanoAOD and other un-flattened trees, you can assign this as `True` to flatten branches with variable length for each event (Event level -> Object level)| False |
 | `Debug`         |boolean| If True, only a small subset of events/objects are used for either Signal or background. Useful for quick debugging of code| False |
 |`RandomState`|integer |Choose the same number every time for reproducibility| 42|
 |`MVAlogplot`|boolean| If true, MVA outputs are plotted in log scale| False|
+|`ROClogplot`|boolean| If true, ROC is plotted in log scale| False|
 |`Multicore`|boolean| If True all CPU cores available are used XGB | True|
 
 #### How to add variables? or modify the ones that are in tree

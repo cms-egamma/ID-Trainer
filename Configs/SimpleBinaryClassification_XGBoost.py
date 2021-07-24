@@ -11,7 +11,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 ####Start here
 #####################################################################
 OutputDirName = 'SimpleBinaryClassification_XGBoost' #All plots, models, config file will be stored here
-Debug=False # If True, only a small subset of events/objects are used for either Signal or background #Useful for quick debugging
+Debug=True # If True, only a small subset of events/objects are used for either Signal or background #Useful for quick debugging
 
 #Branches to read #Should be in the root files #Only the read branches can be later used for any purpose
 branches=["scl_eta","ele*","matched*","EleMVACats",'passElectronSelection','Fall*']
@@ -51,7 +51,7 @@ MVAs = [
      "feature_bins":[100 for i in range(22)], #same length as features
      #Binning used only for plotting features (should be in the same order as features), does not affect training
      'Scaler':"MinMaxScaler", #Scaling for features before passing to the model training
-     'UseGPU':True, #If you have a GPU card, you can turn on this option (CUDA 10.0, Compute Capability 3.5 required)
+     'UseGPU':False, #If you have a GPU card, you can turn on this option (CUDA 10.0, Compute Capability 3.5 required)
      "XGBGridSearch":{'min_child_weight': [5]} #All standard XGB parameters supported
     },
 ]
@@ -59,10 +59,10 @@ MVAs = [
 
 #------------------------------------------#------------------------------------------
 ######################################################################################################
-######### Everything below this line is not necessary ################################################
+######### Everything below this line is optinal ################################################
 
 #------------------------------------------#Optional parameters below (Can be commented)
-
+'''
 #------------------------------------------
 OverlayWP=['Fall17isoV2wp90','Fall17isoV2wp80'] # Working Points or flags to comapre to (should be booleans in the trees)
 OverlayWPColors = ["black","purple"] #Colors on plots for WPs
@@ -99,3 +99,4 @@ flatten=False
 ############## (Event level -> Object level).
 ############## You can't flatten branches which have different length for the same events. For example: It is not possible to flatten electron and muon branches both at the same time, since each event could have different electrons vs muons. Branches that have only one value for each event, line Nelectrons, can certainly be read along with unflattened branches.
 #------------------------------------------
+'''
