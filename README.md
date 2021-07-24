@@ -37,6 +37,10 @@ Salient features:
 3) Reweighting plots for pT and eta
 4) Comparison of new ID performance with benchmark ID flags
 
+# Primary intended use: For ID Training
+
+![WhatisID](WhatisID.png)
+
 # Setting up
 
 #### Clone
