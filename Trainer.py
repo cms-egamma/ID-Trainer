@@ -27,7 +27,7 @@ try:
     tf.reset_default_graph()
 except AttributeError:
     tf.compat.v1.reset_default_graph()
-    tf.compat.v1.disable_eager_execution()
+    #tf.compat.v1.disable_eager_execution()
 
 
 # ## Check if notebook or script and import the right config
@@ -52,7 +52,7 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="PFPhoton"
+    TrainConfig="PFPhoton_try"
     exec("import "+TrainConfig.replace("/", ".")+" as Conf")
 else:
     TrainConfig=sys.argv[1]
@@ -379,7 +379,7 @@ def corre(df,Classes=[''],MVA={}):
                 fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+C+"_CORRELATION_"+k+".png")
 
 
-# In[35]:
+# In[28]:
 
 
 from tensorflow.keras.utils import to_categorical
@@ -495,6 +495,14 @@ for MVA in Conf.MVAs:
         train_history = modelDNN.fit(X_train,Y_train,epochs=MVA["DNNDict"]['epochs'],batch_size=MVA["DNNDict"]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
         modelDNN.save(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.h5")
+        #try:
+        import cmsml as cmsml
+        #tf.compat.v1.enable_eager_execution()
+        cmsml.tensorflow.save_graph(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.pb"
+                                    ,modelDNN, variables_to_constants=True)
+        #tf.compat.v1.disable_eager_execution()
+        #except:
+        #print("Could not save DNN model file in pb format! Is cmsml available?")
         
         training_loss = train_history.history['loss']
         test_loss = train_history.history['val_loss']
