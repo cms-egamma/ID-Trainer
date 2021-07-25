@@ -694,15 +694,15 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     for m in range(len(Classes)):
         if len(Classes)>2:
             if m==0 or m==1:
-                marker='$S$'
+                marker='S'
             else:
-                marker='$B$'
+                marker='B'
         if len(Classes)<3:
             if m==0:
-                marker='$S$'
+                marker='S'
             else:
-                marker='$B$'
-        ax.errorbar(ptbinsmy,fulllist[m],xerr=xefulllist,yerr=fullliste[m],markersize=6,marker=marker,markeredgecolor='black',label=Classes[m],color=Colors[m],fmt = '.')
+                marker='B'
+        ax.errorbar(ptbinsmy,fulllist[m],xerr=xefulllist,yerr=fullliste[m],markersize=6,markeredgecolor='black',label=Classes[m],color=Colors[m],fmt = '.')
     ax.set_ylim(0,130)
     if groupbyvar=='ele_pt_bin':
         #ax.set_yscale('log')
