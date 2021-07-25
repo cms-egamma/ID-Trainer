@@ -56,7 +56,7 @@ MVAs = [
      "feature_bins":[100 for i in range(22)], #same length as features
      #Binning used only for plotting features (should be in the same order as features), does not affect training
      'Scaler':"MinMaxScaler", #Scaling for features before passing to the model training
-     'UseGPU':True, #If you have a GPU card, you can turn on this option (CUDA 10.0, Compute Capability 3.5 required)
+     'UseGPU':False, #If you have a GPU card, you can turn on this option (CUDA 10.0, Compute Capability 3.5 required)
      "XGBGridSearch":{'min_child_weight': [5]} #All standard XGB parameters supported
     },
 
@@ -87,7 +87,9 @@ MVAs = [
 ######### Everything below this line is not necessary ################################################
 
 #------------------------------------------#Optional parameters below (Can be commented)
-
+'''
+Spectators=["ele_fbrem", "ele_deltaetain", "ele_deltaphiin", "ele_oldsigmaietaieta"]
+SpectatorBins=[100,100,100,100]
 #------------------------------------------
 OverlayWP=['Fall17isoV2wp90','Fall17isoV2wp80'] # Working Points or flags to comapre to (should be booleans in the trees)
 OverlayWPColors = ["black","purple"] #Colors on plots for WPs
@@ -124,3 +126,4 @@ flatten=False
 ############## (Event level -> Object level).
 ############## You can't flatten branches which have different length for the same events. For example: It is not possible to flatten electron and muon branches both at the same time, since each event could have different electrons vs muons. Branches that have only one value for each event, line Nelectrons, can certainly be read along with unflattened branches.
 #------------------------------------------
+'''
