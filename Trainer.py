@@ -52,7 +52,7 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="PFPhoton"
+    TrainConfig="PFPhoton_try"
     exec("import "+TrainConfig.replace("/", ".")+" as Conf")
 else:
     TrainConfig=sys.argv[1]
@@ -379,7 +379,7 @@ def corre(df,Classes=[''],MVA={}):
                 fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+C+"_CORRELATION_"+k+".png")
 
 
-# In[35]:
+# In[28]:
 
 
 from tensorflow.keras.utils import to_categorical
@@ -394,11 +394,16 @@ for MVA in Conf.MVAs:
     if 'XGB' in MVA["MVAtype"]:
         ###############XGB#######################################
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,MVA["features"],cat,weight)
-        prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
-        exec("from sklearn.preprocessing import "+MVA["Scaler"])
-        exec("sc = "+MVA["Scaler"]+"()")
-        X_train = sc.fit_transform(X_train)
-        X_test = sc.transform(X_test)
+        try:
+            prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
+            exec("from sklearn.preprocessing import "+MVA["Scaler"])
+            exec("sc = "+MVA["Scaler"]+"()")
+            X_train = sc.fit_transform(X_train)
+            X_test = sc.transform(X_test)
+            import pickle
+            pickle.dump(sc, open(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"_scaler.pkl",'wb'))
+        except:
+            print("Data is not being scaled! Either no scaling option provided or scaling not found")
         prGreen(MVA["MVAtype"]+" Training starting")
         import xgboost as xgb
         from sklearn.model_selection import cross_val_score, GridSearchCV
@@ -476,13 +481,20 @@ for MVA in Conf.MVAs:
         X_train, Y_train, Wt_train, X_test, Y_test, Wt_test = PrepDataset(df_final,TrainIndices,TestIndices,MVA["features"],cat,weight)
         Y_train = to_categorical(Y_train, num_classes=len(Conf.Classes))
         Y_test = to_categorical(Y_test, num_classes=len(Conf.Classes))
-        print(Y_train.shape)
-        prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
-        exec("from sklearn.preprocessing import "+MVA["Scaler"])
-        exec("sc = "+MVA["Scaler"]+"()")
-        X_train = sc.fit_transform(X_train)
-        X_test = sc.transform(X_test)
+        #print(Y_train.shape)
+        try:
+            prGreen(MVA["MVAtype"]+" Applying "+MVA["Scaler"])
+            exec("from sklearn.preprocessing import "+MVA["Scaler"])
+            exec("sc = "+MVA["Scaler"]+"()")
+            X_train = sc.fit_transform(X_train)
+            X_test = sc.transform(X_test)
+            import pickle
+            pickle.dump(sc, open(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"_scaler.pkl",'wb'))
+        except:
+            print("Data is not being scaled! Either no scaling option provided or scaling not found")
+            
         prGreen("DNN fitting running")
+        
         try:
             es = MVA["DNNDict"]['earlyStopping']
             print("Setting early stopping")
@@ -495,6 +507,14 @@ for MVA in Conf.MVAs:
         train_history = modelDNN.fit(X_train,Y_train,epochs=MVA["DNNDict"]['epochs'],batch_size=MVA["DNNDict"]['batchsize'],validation_data=(X_test,Y_test, Wt_test),
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
         modelDNN.save(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.h5")
+        #try:
+        #import cmsml as cmsml
+        #tf.compat.v1.enable_eager_execution()
+        #cmsml.tensorflow.save_graph(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.pb"
+                                    #,modelDNN, variables_to_constants=True)
+        #tf.compat.v1.disable_eager_execution()
+        #except:
+        #print("Could not save DNN model file in pb format! Is cmsml available?")
         
         training_loss = train_history.history['loss']
         test_loss = train_history.history['val_loss']
