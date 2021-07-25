@@ -27,7 +27,7 @@ try:
     tf.reset_default_graph()
 except AttributeError:
     tf.compat.v1.reset_default_graph()
-    #tf.compat.v1.disable_eager_execution()
+    tf.compat.v1.disable_eager_execution()
 
 
 # ## Check if notebook or script and import the right config
@@ -496,10 +496,10 @@ for MVA in Conf.MVAs:
                                      verbose=1,callbacks=[es], sample_weight=Wt_train)
         modelDNN.save(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.h5")
         #try:
-        import cmsml as cmsml
+        #import cmsml as cmsml
         #tf.compat.v1.enable_eager_execution()
-        cmsml.tensorflow.save_graph(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.pb"
-                                    ,modelDNN, variables_to_constants=True)
+        #cmsml.tensorflow.save_graph(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"modelDNN.pb"
+                                    #,modelDNN, variables_to_constants=True)
         #tf.compat.v1.disable_eager_execution()
         #except:
         #print("Could not save DNN model file in pb format! Is cmsml available?")
