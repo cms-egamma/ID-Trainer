@@ -78,7 +78,7 @@ if not hasattr(Conf, 'testsize'): Conf.testsize=0.2
 if not hasattr(Conf, 'Debug'): Conf.Debug=False
 if not hasattr(Conf, 'Thresholds'):Conf.Thresholds=False
 if not hasattr(Conf, 'Spectators'):Conf.Spectators=[]
-if not hasattr(Conf, 'CMSLabel'):Conf.CMSLabel=["CMS Preliminary","13 TeV"]
+if not hasattr(Conf, 'CMSLabel'):Conf.CMSLabel=["",""]
     
 print(Conf.CMSLabel)
 
