@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
+
+def MyBins(lower,upper,step): return np.arange(lower,upper,step).tolist() 
     
 def plot_mva(df, column, bins, logscale=False, ax=None, title=None, ls='dashed', alpha=0.5, sample='',cat="Matchlabel",Wt="Wt",Classes=[''],Colors=['']):
     histtype="bar" 
