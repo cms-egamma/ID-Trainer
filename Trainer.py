@@ -639,11 +639,11 @@ if len(Conf.Classes)<=2:
         axes.text(0, 1, str(Conf.CMSLabel[0]), horizontalalignment = 'left', verticalalignment = 'bottom', transform=axes.transAxes, fontsize = 12)#, fontweight = 'bold')
         #ax.text(0.14, 1, "$\it{Simulation}$", horizontalalignment = 'left', verticalalignment = 'bottom', transform = ax.transAxes, fontsize = 13)
         axes.text(1, 1, Conf.CMSLabel[1], horizontalalignment = 'right', verticalalignment = 'bottom', transform = axes.transAxes, fontsize = 12)
-        axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
-                  horizontalalignment='center',
-                  verticalalignment='center',
-                  rotation='vertical',
-                  transform=axes.transAxes)
+        #axes.text(1.05, 0.5, 'CMS EGamma ID-Trainer',
+        #          horizontalalignment='center',
+        #          verticalalignment='center',
+        #          rotation='vertical',
+        #          transform=axes.transAxes)
         axes.grid(color='gray', linestyle='--', linewidth=0.5)
         if Conf.ROClogplot:
             axes.set_yscale("log")
