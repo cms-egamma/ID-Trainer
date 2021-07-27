@@ -52,7 +52,7 @@ def in_ipynb():
 
 if in_ipynb():
     print("In IPython")
-    TrainConfig="PFPhoton_try"
+    TrainConfig="SabaConfig"
     exec("import "+TrainConfig.replace("/", ".")+" as Conf")
 else:
     TrainConfig=sys.argv[1]
@@ -190,6 +190,8 @@ len(df_final)
 
 df_final[cat]=0
 for i,k in enumerate(Conf.Classes):
+    print(i)
+    print(k)
     df_final.loc[df_final.Class == k, cat] = i
 
 
@@ -379,7 +381,7 @@ def corre(df,Classes=[''],MVA={}):
                 fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+C+"_CORRELATION_"+k+".png")
 
 
-# In[28]:
+# In[29]:
 
 
 from tensorflow.keras.utils import to_categorical
@@ -616,8 +618,8 @@ for MVA in Conf.MVAs:
             #plt.plot([0, 1], [0, 1], 'k--')
             #ax.set_xlim([0.8, 1.0])
             #ax.set_ylim([0.0, 1.05])
-            ax.set_xlabel('Signal efficiency (%)',fontsize=10)
-            ax.set_ylabel('Background efficiency (%)',fontsize=10)
+            ax.set_xlabel(Conf.Classes[i]+' efficiency (%)',fontsize=10)
+            ax.set_ylabel('Efficiency for other classes (%)',fontsize=10)
             #ax.set_title(MVA["Label"]+' ROC: Node '+str(i+1),fontsize=10)
             ax.legend(title=MVA["Label"]+' ROC: Node '+str(i+1),loc="best",fontsize=10)
     fig.savefig(Conf.OutputDirName+"/"+MVA["MVAtype"]+"/"+MVA["MVAtype"]+"_"+"ROC.pdf")
@@ -640,12 +642,13 @@ for MVA in Conf.MVAs:
 
 
 
-# In[29]:
+# In[30]:
 
 
 if len(Conf.Classes)<=2:
     prGreen("Plotting Final ROC")
-    fig, axes = plt.subplots(1, 1, figsize=(5, 5))
+    prGreen("Remeber: First class of the Classes argument should be signal, otherwise, plots might not make sense.")
+    fig, axes = plt.subplots(1, 1, figsize=(6, 6))
     if hasattr(Conf, 'OverlayWP') and len(Conf.OverlayWP)>0:
         for color,OverlayWpi in zip(Conf.OverlayWPColors,Conf.OverlayWP):
             
@@ -654,8 +657,8 @@ if len(Conf.Classes)<=2:
         for MVAi in Conf.MVAs:
             plot_roc_curve(df_final.query('TrainDataset==0'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='--', label=MVAi["Label"]+' Testing',cat=cat,Wt='xsecwt')
             plot_roc_curve(df_final.query('TrainDataset==1'),MVAi["MVAtype"]+"_pred", tpr_threshold=0.0, ax=axes, color=MVAi["Color"], linestyle='-', label=MVAi["Label"]+' Training',cat=cat,Wt='xsecwt')
-        axes.set_ylabel("Background efficiency (%)")
-        axes.set_xlabel("Signal efficiency  (%)")
+        axes.set_ylabel(Conf.Classes[1]+" efficiency (%)")
+        axes.set_xlabel(Conf.Classes[0]+" efficiency  (%)")
         axes.text(0, 1, str(Conf.CMSLabel[0]), horizontalalignment = 'left', verticalalignment = 'bottom', transform=axes.transAxes, fontsize = 12)#, fontweight = 'bold')
         #ax.text(0.14, 1, "$\it{Simulation}$", horizontalalignment = 'left', verticalalignment = 'bottom', transform = ax.transAxes, fontsize = 13)
         axes.text(1, 1, Conf.CMSLabel[1], horizontalalignment = 'right', verticalalignment = 'bottom', transform = axes.transAxes, fontsize = 12)
@@ -667,11 +670,12 @@ if len(Conf.Classes)<=2:
         axes.grid(color='gray', linestyle='--', linewidth=0.5)
         if Conf.ROClogplot:
             axes.set_yscale("log")
+        axes.legend(loc='best',ncol=1,fontsize=10)
     fig.savefig(Conf.OutputDirName+"/ROCFinal.pdf")
     fig.savefig(Conf.OutputDirName+"/ROCFinal.png")
 
 
-# In[30]:
+# In[31]:
 
 
 def eff(group_df,var,cat,catvalue):
@@ -739,7 +743,7 @@ def EffTrend(cat='',var='',groupbyvar='',ptbins=[],label='',title='',plotname=''
     figMVAComp.savefig(plot_dir+plotname+".png")
 
 
-# In[31]:
+# In[32]:
 
 
 if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
@@ -804,7 +808,7 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
                 EffTrend(cat=cat,var=Wp,groupbyvar=variable,ptbins=binn, label=xaxislabel,title='CMSSW_ID_'+Wp,plotname="CMSSW_ID_"+Wp+"_"+variable,df=EB_test,plot_dir=Conf.OutputDirName+"/"+MVA["MVAtype"]+"/Test_",Classes=Conf.Classes,Colors=Conf.ClassColors)
 
 
-# In[32]:
+# In[33]:
 
 
 if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
@@ -830,7 +834,7 @@ if hasattr(Conf, 'SigEffWPs')and len(Conf.SigEffWPs)>0:
     mydf2.to_csv(Conf.OutputDirName+'/Thresholds/'+"SigEffWPs_Test.csv")
 
 
-# In[33]:
+# In[35]:
 
 
 
@@ -840,6 +844,24 @@ pngtopdf(ListPattern=[Conf.OutputDirName+'/*/*MVA*png'],Save=Conf.OutputDirName+
 prGreen("Done!! Please find the quick look ROC pdf here "+Conf.OutputDirName+"/mydocROC.pdf")
 prGreen("Done!! Please find the quick look MVA pdf here "+Conf.OutputDirName+"/mydocMVA.pdf")
 prGreen("Individual plots and saved model files can be found in directory: "+Conf.OutputDirName+'/')
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

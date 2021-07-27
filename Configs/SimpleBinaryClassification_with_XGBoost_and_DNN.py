@@ -19,6 +19,7 @@ branches=["scl_eta","ele*","matched*","EleMVACats",'passElectronSelection','Fall
 SaveDataFrameCSV,loadfromsaved=True,False #If loadfromsaved=True, dataframe stored in OutputDirName will be read
 
 Classes,ClassColors = ['IsolatedSignal','NonIsolated'],['#377eb8', '#ff7f00']
+#Remeber: For binary classification: First class of the Classes argument should be signal, otherwise, plots might not make sense.
 
 processes=[
     {'Class':'IsolatedSignal','path':'./DY.root',
