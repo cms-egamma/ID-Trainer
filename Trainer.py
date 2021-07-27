@@ -199,7 +199,7 @@ for i,k in enumerate(Conf.Classes):
 
 
 try:
-    Conf.modifydf(df_final)
+    df_final=Conf.modifydf(df_final)
     print("Dataframe modification is done using modifydf")
 except:
     print("Looks fine")
