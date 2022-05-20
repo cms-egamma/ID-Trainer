@@ -2,7 +2,7 @@
 
 > A simple config-based tool for high-energy-physics machine learning tasks.
 
-Full documentation available here: https://akapoorcern.github.io/ID-Trainer/
+Full documentation available here: https://a-kapoor.github.io/ID-Trainer/
 
 |Currently supports||
 |:---|---|
